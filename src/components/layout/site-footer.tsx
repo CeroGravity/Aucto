@@ -12,9 +12,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
             <Logo />
-            <p className="max-w-xs text-muted-foreground text-sm">
-              Modern commerce for Bangladesh.
-            </p>
+            <p className="max-w-xs text-muted-foreground text-sm">Move with Power.</p>
           </div>
 
           {footerColumns.map((column) => (
@@ -35,6 +33,15 @@ export function SiteFooter() {
             </nav>
           ))}
         </div>
+
+        <Separator className="my-8" />
+
+        <p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">
+          <strong className="font-display font-bold text-primary">Aucto</strong>{" "}
+          <span className="font-mono">/ˈɔːk.toʊ/</span> (AWK-toh) · <em>n.</em> Growth; advancement;
+          the act of creating and elevating. — <em>from the Latin root</em>{" "}
+          <span className="font-mono">auct-</span>, <em>"to increase," "to grow."</em>
+        </p>
 
         <Separator className="my-8" />
 

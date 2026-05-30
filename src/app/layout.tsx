@@ -24,17 +24,13 @@ const display = Archivo({
 export const metadata: Metadata = {
   metadataBase: new URL("https://aucto.example"),
   title: {
-    default: "Aucto",
+    default: "Aucto — Move with Power",
     template: "%s — Aucto",
   },
-  description: "Aucto — modern commerce for Bangladesh.",
-  icons: {
-    icon: "/favicon.svg",
-  },
+  description: "Aucto — Move with Power. Performance training gear and fightwear.",
   openGraph: {
-    title: "Aucto",
-    description: "Aucto — modern commerce for Bangladesh.",
-    images: ["/og.svg"],
+    title: "Aucto — Move with Power",
+    description: "Aucto — Move with Power. Performance training gear and fightwear.",
   },
 };
 

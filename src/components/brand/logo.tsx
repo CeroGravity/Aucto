@@ -1,26 +1,35 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
   className?: string;
 };
 
-// Placeholder brand mark. Swap the inner glyph/wordmark for the real asset
-// later — keep this component as the single import site so the swap is trivial.
+// Brand logo: two pre-placed SVGs swapped by theme via Tailwind dark variants.
+// No currentColor, no inline paths, no client component. Explicit width/height
+// reserve space (no CLS); the SVG is served as-is (unoptimized).
 export function Logo({ className }: LogoProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex select-none items-center gap-2 font-display text-xl font-bold tracking-tight",
-        className,
-      )}
-    >
-      <span
-        aria-hidden
-        className="inline-flex size-6 items-center justify-center rounded-sm bg-accent text-accent-foreground text-sm"
-      >
-        A
-      </span>
-      <span>AUCTO</span>
+    <span className={cn("inline-flex items-center", className)}>
+      <Image
+        src="/aucto-logo.svg"
+        alt="AUCTO"
+        width={52}
+        height={32}
+        priority
+        unoptimized
+        className="h-8 w-auto dark:hidden"
+      />
+      <Image
+        src="/aucto-logo-white.svg"
+        alt="AUCTO"
+        width={52}
+        height={32}
+        priority
+        unoptimized
+        className="hidden h-8 w-auto dark:block"
+      />
     </span>
   );
 }

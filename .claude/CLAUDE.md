@@ -214,7 +214,7 @@ pnpm db:studio    # Drizzle studio
 - North star: Nike.com (primary); adidas / Under Armour / Gymshark secondary.
 - Bangladesh market: clean, uncluttered, mobile-first, low cognitive load.
 - Generous whitespace. Few items per row. One clear CTA per screen.
-- Palette (tokens, light + dark): near-black #111111, white #FFFFFF, neutral greys, single accent #FF4D00 used sparingly. Primary actions near-black.
+- Palette (tokens, light + dark): near-black #111111 text, white #FFFFFF, navy #1B2A4D primary; no orange.
 - Type: Inter body; bold tight-tracked display headings. Editorial, modern.
 
 ### 3D

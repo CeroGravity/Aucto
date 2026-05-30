@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#111111"/>
-  <rect x="80" y="80" width="64" height="64" rx="12" fill="#FF4D00"/>
-  <text x="160" y="128" font-family="Archivo, Arial, sans-serif" font-size="44" font-weight="800" fill="#F5F5F5">AUCTO</text>
-  <text x="80" y="360" font-family="Archivo, Arial, sans-serif" font-size="96" font-weight="800" fill="#F5F5F5" letter-spacing="-2">Built clean.</text>
-  <text x="80" y="470" font-family="Archivo, Arial, sans-serif" font-size="96" font-weight="800" fill="#F5F5F5" letter-spacing="-2">Shipped fast.</text>
-  <text x="80" y="560" font-family="Inter, Arial, sans-serif" font-size="32" fill="#A1A1A1">Modern commerce for Bangladesh — placeholder OG image.</text>
-</svg>
