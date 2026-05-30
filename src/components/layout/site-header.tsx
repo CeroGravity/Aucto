@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -14,7 +15,7 @@ const cartCount = 0;
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-40 border-border border-b bg-background">
       <Container className="flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Link
@@ -38,6 +39,9 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-1">
+          <div className="mr-1 hidden md:flex md:items-center">
+            <ThemeToggle />
+          </div>
           <Button asChild variant="ghost" size="icon" aria-label="Account">
             <Link href={accountLink.href}>
               <User />

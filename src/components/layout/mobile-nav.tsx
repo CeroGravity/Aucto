@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -53,6 +54,11 @@ export function MobileNav() {
             </Link>
           </SheetClose>
         </nav>
+        <Separator className="mx-2 w-auto" />
+        <div className="flex items-center justify-between px-6 py-4">
+          <span className="font-medium text-muted-foreground text-sm">Theme</span>
+          <ThemeToggle />
+        </div>
       </SheetContent>
     </Sheet>
   );

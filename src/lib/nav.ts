@@ -1,6 +1,5 @@
 // Single source of navigation truth. Feeds both the header and the footer so
-// the two never drift. Category links point to /products until Phase 2 wires
-// real filtering.
+// the two never drift. Unisex categories — links carry the catalog filter.
 
 export type NavLink = {
   label: string;
@@ -13,10 +12,10 @@ export type FooterColumn = {
 };
 
 export const categoryNav: NavLink[] = [
-  { label: "New", href: "/products" },
-  { label: "Men", href: "/products" },
-  { label: "Women", href: "/products" },
-  { label: "Sale", href: "/products" },
+  { label: "Compression", href: "/products?category=compression" },
+  { label: "Gym Shorts", href: "/products?category=gym-shorts" },
+  { label: "Muay Thai", href: "/products?category=muay-thai-shorts" },
+  { label: "MMA Shorts", href: "/products?category=mma-shorts" },
 ];
 
 export const accountLink: NavLink = { label: "Account", href: "/account" };

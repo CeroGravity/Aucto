@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { footerColumns } from "@/lib/nav";
@@ -39,12 +38,9 @@ export function SiteFooter() {
 
         <Separator className="my-8" />
 
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Aucto. All rights reserved.
-          </p>
-          <ThemeToggle />
-        </div>
+        <p className="text-muted-foreground text-sm">
+          © {new Date().getFullYear()} Aucto. All rights reserved.
+        </p>
       </Container>
     </footer>
   );

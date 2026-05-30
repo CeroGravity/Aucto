@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node --env-file-if-exists=.env.local node_modules/next/dist/bin/next start",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome format --write .",
@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:check": "tsx scripts/db-check.ts"
+    "db:check": "tsx scripts/db-check.ts",
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "next": "15.5.4",
@@ -29,7 +30,8 @@
     "class-variance-authority": "0.7.1",
     "lucide-react": "0.545.0",
     "@radix-ui/react-slot": "1.2.3",
-    "@radix-ui/react-dialog": "1.1.15"
+    "@radix-ui/react-dialog": "1.1.15",
+    "@radix-ui/react-switch": "1.2.6"
   },
   "devDependencies": {
     "typescript": "5.9.3",

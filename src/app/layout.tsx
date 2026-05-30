@@ -44,7 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body className={cn(inter.variable, display.variable, "min-h-dvh antialiased")}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

@@ -4,28 +4,29 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Avoid hydration mismatch: render the toggle only after mount, since the
-  // resolved theme is unknown on the server. (UI state, not data fetching.)
+  // Resolved theme is unknown on the server; render the unchecked (light)
+  // state until mount to avoid a hydration mismatch. (UI state, not data.)
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const isDark = resolvedTheme === "dark";
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      aria-label="Toggle theme"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-    >
-      {mounted && isDark ? <Sun /> : <Moon />}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Sun className="size-4 text-muted-foreground" aria-hidden="true" />
+      <Switch
+        checked={isDark}
+        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        aria-label="Toggle dark mode"
+      />
+      <Moon className="size-4 text-muted-foreground" aria-hidden="true" />
+    </div>
   );
 }
