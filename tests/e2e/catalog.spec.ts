@@ -18,6 +18,7 @@ test.describe("catalog", () => {
 
   test("category filter narrows the grid", async ({ page }) => {
     await page.goto("/products");
+    await page.locator(productCards).first().waitFor();
     const allCount = await page.locator(productCards).count();
 
     // The filter control links to the shareable, URL-based filter.
@@ -29,6 +30,7 @@ test.describe("catalog", () => {
     // Visiting that URL narrows the grid (server-rendered, shareable).
     await page.goto("/products?category=muay-thai-shorts");
 
+    await page.locator(productCards).first().waitFor();
     const filteredCount = await page.locator(productCards).count();
     expect(filteredCount).toBeGreaterThan(0);
     expect(filteredCount).toBeLessThan(allCount);

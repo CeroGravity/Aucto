@@ -27,6 +27,10 @@ export default defineConfig({
   // Serial run keeps results reproducible when driving a system browser
   // (parallel instances starve CPU and make navigations flaky).
   workers: 1,
+  // Generous timeouts: server actions hit Neon (cold round-trips), and the
+  // first action per server boot is slow.
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   reporter: "list",
   use: {
     baseURL: "http://localhost:3000",

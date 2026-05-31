@@ -6,15 +6,15 @@ import { AddToCartButton } from "@/components/features/add-to-cart-button";
 import type { Size } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 
-type VariantOption = { size: Size; stock: number };
+type VariantOption = { id: number; size: Size; stock: number };
 
 type SizeSelectorProps = {
   variants: VariantOption[];
-  productSlug: string;
 };
 
-export function SizeSelector({ variants, productSlug }: SizeSelectorProps) {
+export function SizeSelector({ variants }: SizeSelectorProps) {
   const [selected, setSelected] = useState<Size | null>(null);
+  const selectedVariant = variants.find((v) => v.size === selected) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +47,10 @@ export function SizeSelector({ variants, productSlug }: SizeSelectorProps) {
         </div>
       </fieldset>
 
-      <AddToCartButton productSlug={productSlug} size={selected} disabled={selected === null} />
+      <AddToCartButton
+        variantId={selectedVariant?.id ?? null}
+        disabled={selectedVariant === null}
+      />
     </div>
   );
 }

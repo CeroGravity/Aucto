@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 
+import { CartContents } from "@/components/features/cart-contents";
 import { Container } from "@/components/ui/container";
 
 export const metadata: Metadata = { title: "Cart" };
 
 export default function CartPage() {
   return (
-    <Container className="py-24">
+    <Container className="py-12 md:py-16">
       <h1 className="font-display font-bold text-4xl tracking-tight md:text-5xl">Cart</h1>
-      <p className="mt-6 text-lg text-muted-foreground">Aucto Cart — coming soon.</p>
+      <div className="mx-auto mt-8 flex min-h-[45vh] max-w-2xl flex-col rounded-xl border border-border">
+        <CartContents />
+      </div>
     </Container>
   );
 }

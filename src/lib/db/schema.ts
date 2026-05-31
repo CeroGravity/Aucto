@@ -8,6 +8,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // Unisex catalog. No gender anywhere.
@@ -86,8 +87,54 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
   }),
 }));
 
+// --- Cart (guest, server-authoritative, cookie-keyed; merge-ready) ---
+// Phase 4 will merge a guest cart (resolved by the `aucto_cart` cookie →
+// carts.sessionToken) into the signed-in user's cart (carts.userId) on login.
+// userId is nullable so guest carts exist pre-auth and the merge is a no-schema
+// change.
+export const carts = pgTable("carts", {
+  id: serial("id").primaryKey(),
+  sessionToken: text("session_token").notNull().unique(),
+  userId: text("user_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: serial("id").primaryKey(),
+    cartId: integer("cart_id")
+      .notNull()
+      .references(() => carts.id, { onDelete: "cascade" }),
+    variantId: integer("variant_id")
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("quantity_positive", sql`${t.quantity} > 0`),
+    unique("cart_items_cart_variant_unique").on(t.cartId, t.variantId),
+  ],
+);
+
+export const cartsRelations = relations(carts, ({ many }) => ({
+  items: many(cartItems),
+}));
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, { fields: [cartItems.cartId], references: [carts.id] }),
+  variant: one(productVariants, {
+    fields: [cartItems.variantId],
+    references: [productVariants.id],
+  }),
+}));
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
 export type Size = (typeof sizeEnum.enumValues)[number];
+export type Cart = typeof carts.$inferSelect;
+export type CartItem = typeof cartItems.$inferSelect;

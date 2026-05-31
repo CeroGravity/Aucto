@@ -25,6 +25,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   if (!product) notFound();
 
   const variants = product.variants.map((variant) => ({
+    id: variant.id,
     size: variant.size,
     stock: variant.stock,
   }));
@@ -78,7 +79,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
 
-          <SizeSelector variants={variants} productSlug={product.slug} />
+          <SizeSelector variants={variants} />
         </div>
       </div>
     </Container>

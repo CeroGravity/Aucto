@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { CartContents } from "@/components/features/cart-contents";
+import { CartProvider } from "@/components/features/cart-drawer";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { getCartCount } from "@/server/queries/cart";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,7 +37,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const cartCount = await getCartCount();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, display.variable, "min-h-dvh antialiased")}>
@@ -50,13 +54,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           >
             Skip to content
           </a>
-          <div className="flex min-h-dvh flex-col">
-            <SiteHeader />
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
-          </div>
+          <CartProvider count={cartCount} contents={<CartContents />}>
+            <div className="flex min-h-dvh flex-col">
+              <SiteHeader />
+              <main id="main-content" className="flex-1">
+                {children}
+              </main>
+              <SiteFooter />
+            </div>
+          </CartProvider>
         </ThemeProvider>
       </body>
     </html>

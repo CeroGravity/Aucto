@@ -1,17 +1,13 @@
-import { ShoppingBag, User } from "lucide-react";
+import { User } from "lucide-react";
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
+import { CartButton } from "@/components/features/cart-drawer";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { accountLink, cartLink, categoryNav } from "@/lib/nav";
-
-// Phase 1: cart is always empty. Real count is wired in Phase 3; the badge
-// slot below stays hidden while the count is 0.
-const cartCount = 0;
+import { accountLink, categoryNav } from "@/lib/nav";
 
 export function SiteHeader() {
   return (
@@ -47,24 +43,7 @@ export function SiteHeader() {
               <User />
             </Link>
           </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : "Cart, empty"}
-          >
-            <Link href={cartLink.href} className="relative">
-              <ShoppingBag />
-              {cartCount > 0 ? (
-                <Badge
-                  variant="accent"
-                  className="-right-1 -top-1 absolute size-5 justify-center rounded-full p-0 text-[10px] leading-none"
-                >
-                  {cartCount}
-                </Badge>
-              ) : null}
-            </Link>
-          </Button>
+          <CartButton />
           <MobileNav />
         </div>
       </Container>
