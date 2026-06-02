@@ -48,6 +48,9 @@ test.describe("cart", () => {
     await addSize(page, "S");
     await expect(page.getByLabel("Cart, 1 items")).toBeVisible();
 
+    // Let the background server action finish persisting before reloading
+    // (the badge above is optimistic/instant).
+    await page.waitForLoadState("networkidle");
     await page.reload();
     await expect(page.getByLabel("Cart, 1 items")).toBeVisible();
   });

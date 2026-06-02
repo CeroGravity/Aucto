@@ -19,14 +19,11 @@ export function ThemeToggle() {
   const isDark = mounted && resolvedTheme === "dark";
 
   return (
-    <div className="flex items-center gap-2">
-      <Sun className="size-4 text-muted-foreground" aria-hidden="true" />
-      <Switch
-        checked={isDark}
-        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-        aria-label="Toggle dark mode"
-      />
-      <Moon className="size-4 text-muted-foreground" aria-hidden="true" />
-    </div>
+    <Switch
+      checked={isDark}
+      onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+      aria-label="Toggle dark mode"
+      thumbContent={isDark ? <Moon /> : <Sun />}
+    />
   );
 }

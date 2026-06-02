@@ -9,7 +9,8 @@ try {
   // .env.local may be absent; fall back to ambient env.
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL?.replace("-pooler", "");
 
 if (!databaseUrl) {
   console.error("DATABASE_URL is not set. Add it to .env.local.");

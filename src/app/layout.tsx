@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { CartContents } from "@/components/features/cart-contents";
 import { CartProvider } from "@/components/features/cart-drawer";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
-import { getCartCount } from "@/server/queries/cart";
+import { getCart } from "@/server/queries/cart";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const cartCount = await getCartCount();
+  const cart = await getCart();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, display.variable, "min-h-dvh antialiased")}>
@@ -54,7 +53,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           >
             Skip to content
           </a>
-          <CartProvider count={cartCount} contents={<CartContents />}>
+          <CartProvider cart={cart}>
             <div className="flex min-h-dvh flex-col">
               <SiteHeader />
               <main id="main-content" className="flex-1">

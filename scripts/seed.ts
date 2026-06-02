@@ -11,7 +11,10 @@ try {
   // .env.local may be absent in CI; fall back to ambient env.
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+// Seed/DDL uses the direct (non-pooled) endpoint — the pooler rejects the
+// prepared statements postgres-js issues by default.
+const databaseUrl =
+  process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL?.replace("-pooler", "");
 if (!databaseUrl) {
   console.error("DATABASE_URL is not set. Add it to .env.local.");
   process.exit(1);

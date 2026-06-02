@@ -79,7 +79,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           <p className="text-muted-foreground leading-relaxed">{product.description}</p>
 
-          <SizeSelector variants={variants} />
+          <SizeSelector
+            variants={variants}
+            product={{
+              slug: product.slug,
+              name: product.name,
+              priceMinor: product.priceMinor,
+              imageKey: cover?.placeholderKey ?? null,
+              imageAlt: cover?.alt ?? null,
+            }}
+          />
         </div>
       </div>
     </Container>

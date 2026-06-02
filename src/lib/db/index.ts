@@ -15,6 +15,9 @@ const client =
     max: 10,
     idle_timeout: 20,
     connect_timeout: 10,
+    // DATABASE_URL is Neon's pooled (PgBouncer) endpoint; transaction pooling
+    // doesn't support prepared statements.
+    prepare: false,
   });
 
 if (process.env.NODE_ENV !== "production") {

@@ -1,28 +1,17 @@
 "use client";
 
 import { Minus, Plus, X } from "lucide-react";
-import { useTransition } from "react";
 
+import { useCart } from "@/components/features/cart-context";
 import { ProductImage } from "@/components/ui/product-image";
 import { formatPriceMinor } from "@/lib/money";
-import { removeCartItem, updateCartItemQty } from "@/server/actions/cart";
 import type { CartLine } from "@/server/queries/cart";
 
 const stepBtn =
   "inline-flex size-8 items-center justify-center text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function CartItemRow({ line }: { line: CartLine }) {
-  const [pending, startTransition] = useTransition();
-
-  const setQty = (qty: number) =>
-    startTransition(async () => {
-      await updateCartItemQty(line.itemId, qty);
-    });
-  const remove = () =>
-    startTransition(async () => {
-      await removeCartItem(line.itemId);
-    });
-
+  const { setQty, removeItem } = useCart();
   const atMax = line.quantity >= line.stock;
 
   return (
@@ -45,10 +34,9 @@ export function CartItemRow({ line }: { line: CartLine }) {
           </div>
           <button
             type="button"
-            onClick={remove}
-            disabled={pending}
+            onClick={() => removeItem(line.itemId)}
             aria-label={`Remove ${line.productName}`}
-            className="rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="size-4" />
           </button>
@@ -58,8 +46,8 @@ export function CartItemRow({ line }: { line: CartLine }) {
           <div className="inline-flex items-center rounded-md border border-border">
             <button
               type="button"
-              onClick={() => setQty(line.quantity - 1)}
-              disabled={pending || line.quantity <= 1}
+              onClick={() => setQty(line.itemId, line.quantity - 1)}
+              disabled={line.quantity <= 1}
               aria-label="Decrease quantity"
               className={stepBtn}
             >
@@ -68,8 +56,8 @@ export function CartItemRow({ line }: { line: CartLine }) {
             <span className="w-8 text-center text-sm tabular-nums">{line.quantity}</span>
             <button
               type="button"
-              onClick={() => setQty(line.quantity + 1)}
-              disabled={pending || atMax}
+              onClick={() => setQty(line.itemId, line.quantity + 1)}
+              disabled={atMax}
               aria-label="Increase quantity"
               className={stepBtn}
             >

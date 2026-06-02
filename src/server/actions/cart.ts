@@ -1,11 +1,12 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCartIdFromCookie, getOrCreateCart } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { cartItems, productVariants } from "@/lib/db/schema";
+import { CART_TAG } from "@/server/queries/cart";
 
 export type CartActionResult = { ok: true } | { ok: false; error: string };
 
@@ -22,8 +23,7 @@ const updateSchema = z.object({
 const removeSchema = z.object({ itemId: z.number().int().positive() });
 
 function revalidateCart() {
-  revalidatePath("/", "layout");
-  revalidatePath("/cart");
+  revalidateTag(CART_TAG);
 }
 
 async function getVariantStock(variantId: number): Promise<number | null> {

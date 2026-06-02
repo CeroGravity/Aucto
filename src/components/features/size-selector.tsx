@@ -5,16 +5,43 @@ import { useState } from "react";
 import { AddToCartButton } from "@/components/features/add-to-cart-button";
 import type { Size } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import type { CartLine } from "@/server/queries/cart";
 
 type VariantOption = { id: number; size: Size; stock: number };
 
-type SizeSelectorProps = {
-  variants: VariantOption[];
+type ProductSummary = {
+  slug: string;
+  name: string;
+  priceMinor: number;
+  imageKey: string | null;
+  imageAlt: string | null;
 };
 
-export function SizeSelector({ variants }: SizeSelectorProps) {
+type SizeSelectorProps = {
+  variants: VariantOption[];
+  product: ProductSummary;
+};
+
+export function SizeSelector({ variants, product }: SizeSelectorProps) {
   const [selected, setSelected] = useState<Size | null>(null);
   const selectedVariant = variants.find((v) => v.size === selected) ?? null;
+
+  const line: CartLine | null = selectedVariant
+    ? {
+        // Temp negative id for the optimistic insert; reconciled on revalidate.
+        itemId: -selectedVariant.id,
+        variantId: selectedVariant.id,
+        productSlug: product.slug,
+        productName: product.name,
+        size: selectedVariant.size,
+        unitPriceMinor: product.priceMinor,
+        quantity: 1,
+        stock: selectedVariant.stock,
+        lineTotalMinor: product.priceMinor,
+        imageKey: product.imageKey,
+        imageAlt: product.imageAlt,
+      }
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,10 +74,7 @@ export function SizeSelector({ variants }: SizeSelectorProps) {
         </div>
       </fieldset>
 
-      <AddToCartButton
-        variantId={selectedVariant?.id ?? null}
-        disabled={selectedVariant === null}
-      />
+      <AddToCartButton line={line} />
     </div>
   );
 }

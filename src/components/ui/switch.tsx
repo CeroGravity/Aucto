@@ -1,9 +1,14 @@
 import * as SwitchPrimitive from "@radix-ui/react-switch";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-function Switch({ className, ...props }: ComponentProps<typeof SwitchPrimitive.Root>) {
+type SwitchProps = ComponentProps<typeof SwitchPrimitive.Root> & {
+  // Optional content rendered inside the sliding thumb (rides with it).
+  thumbContent?: ReactNode;
+};
+
+function Switch({ className, thumbContent, ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -16,9 +21,11 @@ function Switch({ className, ...props }: ComponentProps<typeof SwitchPrimitive.R
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block size-5 rounded-full bg-background shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+          "pointer-events-none flex size-5 items-center justify-center rounded-full bg-background text-foreground shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0 [&_svg]:size-3",
         )}
-      />
+      >
+        {thumbContent}
+      </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   );
 }
