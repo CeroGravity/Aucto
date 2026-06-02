@@ -124,6 +124,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Smooth theme switch — only after mount (no flash on first paint). */
+  .theme-ready * {
+    transition:
+      background-color 250ms ease,
+      border-color 250ms ease,
+      color 250ms ease;
+  }
+
   h1,
   h2,
   h3 {

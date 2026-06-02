@@ -198,3 +198,51 @@ export const verificationTokens = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type Role = (typeof roleEnum.enumValues)[number];
+
+// --- Orders ---
+export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "failed", "cancelled"]);
+
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"), // nullable — guest checkout allowed
+  status: orderStatusEnum("status").notNull().default("pending"),
+  subtotalMinor: integer("subtotal_minor").notNull(),
+  shippingMinor: integer("shipping_minor").notNull(),
+  totalMinor: integer("total_minor").notNull(),
+  // Shipping (Bangladesh).
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  area: text("area").notNull(),
+  city: text("city").notNull(),
+  postcode: text("postcode"),
+  paymentRef: text("payment_ref"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const orderItems = pgTable("order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  variantId: integer("variant_id")
+    .notNull()
+    .references(() => productVariants.id),
+  productName: text("product_name").notNull(),
+  size: sizeEnum("size").notNull(),
+  // Price snapshot at order time (poisha).
+  unitPriceMinor: integer("unit_price_minor").notNull(),
+  quantity: integer("quantity").notNull(),
+});
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+}));
+
+export type Order = typeof orders.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
+export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];

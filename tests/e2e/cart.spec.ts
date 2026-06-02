@@ -67,11 +67,10 @@ test.describe("cart", () => {
     await expect(increase).toBeDisabled();
   });
 
-  test("cart page and checkout placeholder resolve", async ({ page }) => {
+  test("cart page resolves", async ({ page }) => {
     await page.goto("/cart");
     await expect(page.getByRole("heading", { level: 1, name: "Cart" })).toBeVisible();
-
-    await page.goto("/checkout");
-    await expect(page.getByRole("heading", { level: 1, name: "Checkout" })).toBeVisible();
+    // /checkout is now a real flow (redirects to /cart when empty) — covered in
+    // checkout.spec.ts.
   });
 });
