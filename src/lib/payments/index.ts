@@ -1,13 +1,18 @@
+import { env } from "@/lib/env";
 import { FakePaymentProvider } from "./fake";
+import { SslcommerzProvider } from "./sslcommerz";
 import type { PaymentProvider } from "./types";
 
-// Single place to swap the active provider. Phase 5b returns the real card
-// sandbox adapter here (behind the same PaymentProvider interface).
-export const paymentProvider: PaymentProvider = new FakePaymentProvider();
+// Active provider chosen by env (PAYMENT_PROVIDER=fake | sslcommerz). Tests and
+// credential-less dev use the fake adapter; both implement the same interface.
+export const paymentProvider: PaymentProvider =
+  env.PAYMENT_PROVIDER === "sslcommerz" ? new SslcommerzProvider() : new FakePaymentProvider();
 
 export type {
-  PaymentOrder,
+  ConfirmInput,
+  ConfirmResult,
+  InitiateInput,
+  InitiateResult,
   PaymentProvider,
-  PaymentResult,
   PaymentStatus,
 } from "./types";

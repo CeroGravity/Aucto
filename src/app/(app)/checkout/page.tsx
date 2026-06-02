@@ -11,18 +11,38 @@ import { getCart } from "@/server/queries/cart";
 
 export const metadata: Metadata = { title: "Checkout" };
 
-export default async function CheckoutPage() {
+const STATUS_MESSAGES: Record<string, string> = {
+  declined: "Payment was declined. Your cart is intact — try again.",
+  failed: "Payment failed. Your cart is intact — try again.",
+  cancelled: "Payment was cancelled. Your cart is intact.",
+};
+
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const cart = await getCart();
   if (cart.lines.length === 0) redirect("/cart");
 
   const session = await auth();
   const totalMinor = cart.subtotalMinor + SHIPPING_MINOR;
+  const statusMessage = STATUS_MESSAGES[(await searchParams).status ?? ""];
 
   return (
     <Container className="py-12 md:py-16">
       <h1 className="font-display font-bold text-3xl text-primary tracking-tight md:text-4xl">
         Checkout
       </h1>
+
+      {statusMessage ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+        >
+          {statusMessage}
+        </p>
+      ) : null}
 
       <div className="mt-8 grid gap-12 lg:grid-cols-[1fr_360px]">
         <div className="order-2 lg:order-1">

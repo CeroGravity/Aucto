@@ -5,20 +5,25 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
 import { formatPriceMinor } from "@/lib/money";
-import { getOrderById } from "@/server/queries/order";
+import { getOrderByToken } from "@/server/queries/order";
 
 export const metadata: Metadata = { title: "Order confirmed" };
 
-type OrderPageProps = { params: Promise<{ id: string }> };
+type OrderPageProps = { params: Promise<{ token: string }> };
 
 export default async function OrderPage({ params }: OrderPageProps) {
-  const { id } = await params;
-  const orderId = Number(id);
-  if (!Number.isInteger(orderId) || orderId <= 0) notFound();
-
-  const order = await getOrderById(orderId);
+  const { token } = await params;
+  const order = await getOrderByToken(token);
+  // Access requires the unguessable token (or the logged-in owner, who reaches
+  // the page via that same token). Unknown token → 404.
   if (!order) notFound();
+
+  const session = await auth();
+  const isOwner = order.userId !== null && order.userId === session?.user?.id;
+  // The token match already authorizes; ownership is an additional allowed path.
+  void isOwner;
 
   return (
     <Container className="max-w-2xl py-12 md:py-16">

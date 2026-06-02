@@ -204,7 +204,13 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "faile
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
+  // Unique gateway transaction id (lookup key on payment return/IPN).
+  tranId: text("tran_id").notNull().unique(),
+  // Opaque, unguessable token for the confirmation URL (IDOR-safe).
+  accessToken: text("access_token").notNull().unique(),
   userId: text("user_id"), // nullable — guest checkout allowed
+  // Originating cart, so finalize can clear it without a cookie (e.g. IPN).
+  cartId: integer("cart_id"),
   status: orderStatusEnum("status").notNull().default("pending"),
   subtotalMinor: integer("subtotal_minor").notNull(),
   shippingMinor: integer("shipping_minor").notNull(),

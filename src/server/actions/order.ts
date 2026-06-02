@@ -1,22 +1,24 @@
 "use server";
 
-import { and, eq, gte, sql } from "drizzle-orm";
-import { revalidateTag } from "next/cache";
+import { randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
 
 import { auth } from "@/lib/auth";
 import { getCartIdFromCookie } from "@/lib/cart";
 import { SHIPPING_MINOR, shippingSchema } from "@/lib/checkout";
 import { db } from "@/lib/db";
-import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
+import { cartItems, orderItems, orders } from "@/lib/db/schema";
+import { env } from "@/lib/env";
 import { paymentProvider } from "@/lib/payments";
-import { CART_TAG } from "@/server/queries/cart";
 
-export type PlaceOrderResult = { ok: true; orderId: number } | { ok: false; error: string };
+export type PlaceOrderResult = { ok: true; redirectUrl: string } | { ok: false; error: string };
 
-// Distinguishes expected business failures (declined payment, stock) from
-// unexpected errors so we can roll the transaction back cleanly.
-class OrderError extends Error {}
+const token = () => randomBytes(24).toString("base64url");
+const newTranId = () => `auc${randomBytes(11).toString("hex")}`; // ≤30 chars
 
+// Initiate: create a pending order (no stock decrement yet) and hand back the
+// gateway redirect URL. Stock is decremented only after the payment is
+// validated on return/IPN (see lib/orders.ts confirmAndFinalize).
 export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   const parsed = shippingSchema.safeParse(input);
   if (!parsed.success) {
@@ -33,8 +35,6 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
-  // Authoritative cart from the DB (never the optimistic client state), with
-  // variant + product for the price/name snapshot — one query.
   const items = await db.query.cartItems.findMany({
     where: eq(cartItems.cartId, cartId),
     with: {
@@ -45,100 +45,74 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   });
   if (items.length === 0) return { ok: false, error: "Your cart is empty." };
 
-  // Fake-adapter test affordance (removed when 5b adds the real provider): a
-  // "Test decline" full name forces a declined payment.
-  const testOutcome =
-    shipping.fullName.toLowerCase() === "test decline" ? ("failed" as const) : undefined;
+  const subtotalMinor = items.reduce(
+    (sum, i) => sum + i.variant.product.priceMinor * i.quantity,
+    0,
+  );
+  const totalMinor = subtotalMinor + SHIPPING_MINOR;
+  const numItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const first = items[0];
+  const productName =
+    items.length === 1 && first ? first.variant.product.name : `Aucto order (${numItems} items)`;
 
+  const tranId = newTranId();
+  const accessToken = token();
+
+  const [order] = await db
+    .insert(orders)
+    .values({
+      tranId,
+      accessToken,
+      userId,
+      cartId,
+      status: "pending",
+      subtotalMinor,
+      shippingMinor: SHIPPING_MINOR,
+      totalMinor,
+      fullName: shipping.fullName,
+      phone: shipping.phone,
+      address: shipping.address,
+      area: shipping.area,
+      city: shipping.city,
+      postcode: shipping.postcode ? shipping.postcode : null,
+    })
+    .returning({ id: orders.id });
+  if (!order) return { ok: false, error: "Could not create order." };
+
+  await db.insert(orderItems).values(
+    items.map((i) => ({
+      orderId: order.id,
+      variantId: i.variantId,
+      productName: i.variant.product.name,
+      size: i.variant.size,
+      unitPriceMinor: i.variant.product.priceMinor,
+      quantity: i.quantity,
+    })),
+  );
+
+  const base = env.APP_URL;
   try {
-    const orderId = await db.transaction(async (tx) => {
-      let subtotalMinor = 0;
-      const snapshots: Array<{
-        variantId: number;
-        productName: string;
-        size: (typeof items)[number]["variant"]["size"];
-        unitPriceMinor: number;
-        quantity: number;
-      }> = [];
-
-      // Re-check + decrement stock atomically (WHERE stock >= qty guards against
-      // oversell even under concurrency).
-      for (const item of items) {
-        const decremented = await tx
-          .update(productVariants)
-          .set({ stock: sql`${productVariants.stock} - ${item.quantity}` })
-          .where(
-            and(eq(productVariants.id, item.variantId), gte(productVariants.stock, item.quantity)),
-          )
-          .returning({ id: productVariants.id });
-
-        if (decremented.length === 0) {
-          throw new OrderError(`Not enough stock for ${item.variant.product.name}.`);
-        }
-
-        const unitPriceMinor = item.variant.product.priceMinor;
-        subtotalMinor += unitPriceMinor * item.quantity;
-        snapshots.push({
-          variantId: item.variantId,
-          productName: item.variant.product.name,
-          size: item.variant.size,
-          unitPriceMinor,
-          quantity: item.quantity,
-        });
-      }
-
-      const totalMinor = subtotalMinor + SHIPPING_MINOR;
-
-      const [order] = await tx
-        .insert(orders)
-        .values({
-          userId,
-          status: "pending",
-          subtotalMinor,
-          shippingMinor: SHIPPING_MINOR,
-          totalMinor,
-          fullName: shipping.fullName,
-          phone: shipping.phone,
-          address: shipping.address,
-          area: shipping.area,
-          city: shipping.city,
-          postcode: shipping.postcode ? shipping.postcode : null,
-        })
-        .returning({ id: orders.id });
-      if (!order) throw new OrderError("Could not create order.");
-
-      await tx.insert(orderItems).values(snapshots.map((s) => ({ orderId: order.id, ...s })));
-
-      // Charge via the payment abstraction (fake adapter this phase).
-      const payment = await paymentProvider.createPayment({
-        orderId: order.id,
-        amountMinor: totalMinor,
-        testOutcome,
-      });
-
-      // Declined → throw → the whole transaction rolls back (stock restored, no
-      // order persisted, cart untouched).
-      if (payment.status !== "paid") {
-        throw new OrderError("Payment was declined. Please try again.");
-      }
-
-      await tx
-        .update(orders)
-        .set({ status: "paid", paymentRef: payment.ref })
-        .where(eq(orders.id, order.id));
-
-      // Success → clear the cart inside the same transaction.
-      await tx.delete(cartItems).where(eq(cartItems.cartId, cartId));
-
-      return order.id;
+    const { redirectUrl } = await paymentProvider.initiatePayment({
+      tranId,
+      amountMinor: totalMinor,
+      productName,
+      numItems,
+      customer: {
+        name: shipping.fullName,
+        email: session?.user?.email ?? null,
+        phone: shipping.phone,
+        address: shipping.address,
+        city: shipping.city,
+        postcode: shipping.postcode ? shipping.postcode : null,
+      },
+      successUrl: `${base}/api/payment/success`,
+      failUrl: `${base}/api/payment/fail`,
+      cancelUrl: `${base}/api/payment/cancel`,
+      ipnUrl: `${base}/api/payment/ipn`,
     });
-
-    revalidateTag(CART_TAG);
-    return { ok: true, orderId };
-  } catch (error) {
-    if (error instanceof OrderError) {
-      return { ok: false, error: error.message };
-    }
-    throw error;
+    return { ok: true, redirectUrl };
+  } catch {
+    await db.update(orders).set({ status: "failed" }).where(eq(orders.id, order.id));
+    return { ok: false, error: "Could not start payment. Please try again." };
   }
 }

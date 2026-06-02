@@ -249,7 +249,12 @@ const db = drizzle(client, { schema });
 
 async function main() {
   await db.transaction(async (tx) => {
-    // Clear child → parent (also covered by ON DELETE CASCADE).
+    // Clear child → parent. order_items reference product_variants WITHOUT a
+    // cascade, so orders/order_items (and cart_items) must go before variants —
+    // otherwise the reseed hits an FK violation and silently rolls back.
+    await tx.delete(schema.orderItems);
+    await tx.delete(schema.orders);
+    await tx.delete(schema.cartItems);
     await tx.delete(schema.productImages);
     await tx.delete(schema.productVariants);
     await tx.delete(schema.products);

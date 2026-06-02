@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
@@ -34,7 +33,6 @@ const fields: Field[] = [
 ];
 
 export function CheckoutForm({ defaultValues }: { defaultValues: Partial<ShippingInput> }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -52,8 +50,8 @@ export function CheckoutForm({ defaultValues }: { defaultValues: Partial<Shippin
     startTransition(async () => {
       const result = await placeOrder(values);
       if (result.ok) {
-        router.push(`/order/${result.orderId}`);
-        router.refresh();
+        // Full navigation to the payment gateway (real or fake-return route).
+        window.location.href = result.redirectUrl;
       } else {
         setFormError(result.error);
       }

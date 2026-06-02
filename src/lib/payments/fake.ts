@@ -1,31 +1,34 @@
 import { randomBytes } from "node:crypto";
 
-import type { PaymentOrder, PaymentProvider, PaymentResult, PaymentStatus } from "./types";
+import { env } from "@/lib/env";
+import type {
+  ConfirmInput,
+  ConfirmResult,
+  InitiateInput,
+  InitiateResult,
+  PaymentProvider,
+} from "./types";
 
-// Deterministic, no-network fake provider for tests and pre-sandbox dev.
-// Outcome rules (in order):
-//   1. explicit `testOutcome` on the order, else
-//   2. amount ending in "13" poisha (totalMinor % 100 === 13) → failure,
-//   3. otherwise success.
-// The "...13" rule lets e2e force a failure deterministically via the cart
-// total without any flags plumbed through the UI.
-function decideOutcome(order: PaymentOrder): PaymentStatus {
-  if (order.testOutcome) return order.testOutcome;
-  if (order.amountMinor % 100 === 13) return "failed";
-  return "paid";
-}
-
-const statusByRef = new Map<string, PaymentStatus>();
-
+// Deterministic, no-network fake provider. initiatePayment returns a local
+// route that auto-confirms; the decline sentinel (customer name "test decline")
+// routes to the fail outcome. confirmPayment then validates server-side via the
+// SAME code path the real adapter uses.
 export class FakePaymentProvider implements PaymentProvider {
-  async createPayment(order: PaymentOrder): Promise<PaymentResult> {
-    const status = decideOutcome(order);
-    const ref = `fake_${randomBytes(8).toString("hex")}`;
-    statusByRef.set(ref, status);
-    return { ref, status };
+  async initiatePayment(input: InitiateInput): Promise<InitiateResult> {
+    const outcome =
+      input.customer.name.trim().toLowerCase() === "test decline" ? "fail" : "success";
+    const url = new URL("/api/payment/fake-return", env.APP_URL);
+    url.searchParams.set("tran_id", input.tranId);
+    url.searchParams.set("outcome", outcome);
+    return { redirectUrl: url.toString() };
   }
 
-  async getStatus(ref: string): Promise<PaymentStatus> {
-    return statusByRef.get(ref) ?? "failed";
+  async confirmPayment(_input: ConfirmInput): Promise<ConfirmResult> {
+    // The fake-return route only confirms the success outcome, so reaching here
+    // means "paid". No gateway amount to validate in the fake.
+    return {
+      status: "paid",
+      paymentRef: `fake_${randomBytes(8).toString("hex")}`,
+    };
   }
 }

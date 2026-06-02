@@ -1,24 +1,45 @@
-// Payment provider abstraction. Checkout depends ONLY on this interface.
-// Phase 5b adds the real card sandbox adapter behind the same contract.
+// Payment provider abstraction. Both the fake and the real SSLCommerz adapter
+// follow the same initiate → redirect → confirm flow.
 
 export type PaymentStatus = "paid" | "failed";
 
-export type PaymentResult = {
-  ref: string;
-  status: PaymentStatus;
+export type PaymentCustomer = {
+  name: string;
+  email?: string | null;
+  phone: string;
+  address: string;
+  city: string;
+  postcode?: string | null;
 };
 
-// Minimal order shape a provider needs to charge.
-export type PaymentOrder = {
-  orderId: number;
+// Everything a provider needs to start a hosted payment + build callbacks.
+export type InitiateInput = {
+  tranId: string;
   amountMinor: number;
-  // Optional hint used by the fake adapter to force success/failure in tests.
-  testOutcome?: PaymentStatus;
+  productName: string;
+  numItems: number;
+  customer: PaymentCustomer;
+  successUrl: string;
+  failUrl: string;
+  cancelUrl: string;
+  ipnUrl: string;
 };
+
+export type InitiateResult = { redirectUrl: string };
+
+export type ConfirmInput = {
+  tranId: string;
+  // SSLCommerz validation id from the success/IPN callback.
+  valId?: string;
+  // Expected total (poisha) — the provider must verify the gateway amount.
+  expectedAmountMinor: number;
+};
+
+export type ConfirmResult = { status: PaymentStatus; paymentRef?: string };
 
 export interface PaymentProvider {
-  /** Charge for an order. Returns a provider ref + final status. */
-  createPayment(order: PaymentOrder): Promise<PaymentResult>;
-  /** Look up the status of a previously created payment. */
-  getStatus(ref: string): Promise<PaymentStatus>;
+  /** Create a hosted payment; returns the URL to redirect the customer to. */
+  initiatePayment(input: InitiateInput): Promise<InitiateResult>;
+  /** Server-side validation of a return/IPN; never trust redirect params alone. */
+  confirmPayment(input: ConfirmInput): Promise<ConfirmResult>;
 }

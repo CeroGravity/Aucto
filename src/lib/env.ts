@@ -8,6 +8,14 @@ const envSchema = z.object({
   DATABASE_URL_UNPOOLED: z.url().optional(),
   // Auth.js session/JWT secret.
   AUTH_SECRET: z.string().min(1),
+  // Payment provider selection + SSLCommerz sandbox credentials (optional;
+  // app runs on the fake adapter without them).
+  PAYMENT_PROVIDER: z.enum(["fake", "sslcommerz"]).default("fake"),
+  SSLCZ_STORE_ID: z.string().optional(),
+  SSLCZ_STORE_PASSWD: z.string().optional(),
+  SSLCZ_IS_LIVE: z.enum(["true", "false"]).default("false"),
+  // Absolute base URL for building payment callback URLs.
+  APP_URL: z.url().default("http://localhost:3000"),
 });
 
 const parsed = envSchema.safeParse(process.env);
