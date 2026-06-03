@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
+import { env } from "@/lib/env";
 import { footerColumns } from "@/lib/nav";
 
 export function SiteFooter() {
@@ -45,9 +46,21 @@ export function SiteFooter() {
 
         <Separator className="my-8" />
 
-        <p className="text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Aucto. All rights reserved.
-        </p>
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <p className="text-muted-foreground text-sm">
+            © {new Date().getFullYear()} Aucto. All rights reserved.
+          </p>
+          {env.NEXT_PUBLIC_FACEBOOK_URL ? (
+            <a
+              href={env.NEXT_PUBLIC_FACEBOOK_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-sm text-primary text-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Message us on Facebook
+            </a>
+          ) : null}
+        </div>
       </Container>
     </footer>
   );

@@ -262,6 +262,11 @@ export const orders = pgTable("orders", {
   // Set once stock has been decremented, so restore is idempotent.
   stockDecremented: boolean("stock_decremented").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Lifecycle timestamps (set by the admin transitions).
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  shippedAt: timestamp("shipped_at", { withTimezone: true }),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 });
 
 export const orderItems = pgTable("order_items", {
