@@ -16,6 +16,14 @@ const envSchema = z.object({
   SSLCZ_IS_LIVE: z.enum(["true", "false"]).default("false"),
   // Absolute base URL for building payment callback URLs.
   APP_URL: z.url().default("http://localhost:3000"),
+  // Storage for uploaded payment screenshots.
+  STORAGE_PROVIDER: z.enum(["local", "blob"]).default("local"),
+  LOCAL_UPLOAD_DIR: z.string().default("./uploads"),
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
+  // Public merchant numbers + contact (sent to the client; not secrets).
+  NEXT_PUBLIC_BKASH_NUMBER: z.string().default(""),
+  NEXT_PUBLIC_NAGAD_NUMBER: z.string().default(""),
+  NEXT_PUBLIC_FACEBOOK_URL: z.string().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);

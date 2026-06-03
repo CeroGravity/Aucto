@@ -2,7 +2,7 @@ import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 
 import { db } from "@/lib/db";
-import { cartItems, orders, productVariants } from "@/lib/db/schema";
+import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
 import { paymentProvider } from "@/lib/payments";
 import { CART_TAG } from "@/server/queries/cart";
 
@@ -76,4 +76,34 @@ export async function confirmAndFinalize(args: {
   }
 
   return { ok: true, accessToken: order.accessToken, alreadyPaid: false };
+}
+
+// Restore stock for an order whose stock was decremented at placement (manual
+// methods reserve stock immediately). Called by the 5d admin on cancel/reject.
+// Idempotent: flips `stockDecremented` false under the same transaction so a
+// double call can't double-restore.
+export async function restoreStockForOrder(orderId: number): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const claimed = await tx
+      .update(orders)
+      .set({ stockDecremented: false })
+      .where(and(eq(orders.id, orderId), eq(orders.stockDecremented, true)))
+      .returning({ id: orders.id });
+    if (claimed.length === 0) return false; // nothing to restore (idempotent)
+
+    const items = await tx
+      .select({
+        variantId: orderItems.variantId,
+        quantity: orderItems.quantity,
+      })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
+    for (const item of items) {
+      await tx
+        .update(productVariants)
+        .set({ stock: sql`${productVariants.stock} + ${item.quantity}` })
+        .where(eq(productVariants.id, item.variantId));
+    }
+    return true;
+  });
 }

@@ -200,18 +200,51 @@ export type User = typeof users.$inferSelect;
 export type Role = (typeof roleEnum.enumValues)[number];
 
 // --- Orders ---
+// Legacy gateway status (kept for the shelved SSLCommerz/fake flow).
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "failed", "cancelled"]);
+
+// Fulfilment lifecycle (drives the 5d admin).
+export const orderLifecycleEnum = pgEnum("order_lifecycle", [
+  "pending",
+  "confirmed",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "returned",
+]);
+
+// Payment state, independent of fulfilment.
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "unpaid",
+  "awaiting_verification",
+  "paid",
+  "rejected",
+]);
+
+// cod/bkash/nagad are the live methods; fake/sslcommerz remain valid for the
+// shelved gateway adapters.
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "cod",
+  "bkash",
+  "nagad",
+  "fake",
+  "sslcommerz",
+]);
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  // Unique gateway transaction id (lookup key on payment return/IPN).
+  // Unique transaction id (gateway lookup key / internal reference).
   tranId: text("tran_id").notNull().unique(),
   // Opaque, unguessable token for the confirmation URL (IDOR-safe).
   accessToken: text("access_token").notNull().unique(),
   userId: text("user_id"), // nullable — guest checkout allowed
   // Originating cart, so finalize can clear it without a cookie (e.g. IPN).
   cartId: integer("cart_id"),
+  // Legacy gateway status; manual methods use orderStatus/paymentStatus below.
   status: orderStatusEnum("status").notNull().default("pending"),
+  orderStatus: orderLifecycleEnum("order_status").notNull().default("pending"),
+  paymentStatus: paymentStatusEnum("payment_status").notNull().default("unpaid"),
+  paymentMethod: paymentMethodEnum("payment_method").notNull().default("cod"),
   subtotalMinor: integer("subtotal_minor").notNull(),
   shippingMinor: integer("shipping_minor").notNull(),
   totalMinor: integer("total_minor").notNull(),
@@ -223,6 +256,11 @@ export const orders = pgTable("orders", {
   city: text("city").notNull(),
   postcode: text("postcode"),
   paymentRef: text("payment_ref"),
+  // Manual MFS: customer-entered transaction id + stored screenshot key.
+  trxId: text("trx_id"),
+  screenshotKey: text("screenshot_key"),
+  // Set once stock has been decremented, so restore is idempotent.
+  stockDecremented: boolean("stock_decremented").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -251,4 +289,7 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
+export type OrderLifecycle = (typeof orderLifecycleEnum.enumValues)[number];
+export type PaymentStatusValue = (typeof paymentStatusEnum.enumValues)[number];
+export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
 export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];

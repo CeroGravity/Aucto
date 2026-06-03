@@ -6,6 +6,7 @@ import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { SHIPPING_MINOR } from "@/lib/checkout";
+import { env } from "@/lib/env";
 import { formatPriceMinor } from "@/lib/money";
 import { getCart } from "@/server/queries/cart";
 
@@ -48,7 +49,12 @@ export default async function CheckoutPage({
         <div className="order-2 lg:order-1">
           <h2 className="font-semibold text-lg">Shipping details</h2>
           <div className="mt-5">
-            <CheckoutForm defaultValues={{ fullName: session?.user?.name ?? "" }} />
+            <CheckoutForm
+              defaultValues={{ fullName: session?.user?.name ?? "" }}
+              amountLabel={formatPriceMinor(totalMinor)}
+              bkashNumber={env.NEXT_PUBLIC_BKASH_NUMBER}
+              nagadNumber={env.NEXT_PUBLIC_NAGAD_NUMBER}
+            />
           </div>
         </div>
 

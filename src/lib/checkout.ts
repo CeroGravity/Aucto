@@ -15,3 +15,11 @@ export const shippingSchema = z.object({
 });
 
 export type ShippingInput = z.infer<typeof shippingSchema>;
+
+// MFS transaction id: ~10-char alphanumeric code from the bKash/Nagad SMS.
+export const trxIdSchema = z
+  .string()
+  .trim()
+  .min(6, "Enter the TrxID from your payment SMS.")
+  .max(32, "That TrxID looks too long.")
+  .regex(/^[A-Za-z0-9]+$/, "TrxID should be letters and numbers only.");

@@ -41,3 +41,6 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea
 *.tsbuildinfo
+
+# uploaded payment screenshots (local storage)
+/uploads
