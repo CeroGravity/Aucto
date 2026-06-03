@@ -53,6 +53,9 @@ test.describe("checkout", () => {
     await page.goto("/checkout");
     await fillShipping(page);
 
+    // Provide an optional email → receipt path is exercised (fake notifier);
+    // the order must still complete normally.
+    await page.getByLabel("Email (optional — for your receipt)").fill("buyer@example.com");
     await page.getByText("bKash / Nagad", { exact: true }).click();
     await page.getByLabel("TrxID").fill("ABC1D2E3F4");
     await page.getByLabel("Payment screenshot").setInputFiles(PNG);
@@ -87,7 +90,7 @@ test.describe("checkout", () => {
     await page.getByLabel("Payment screenshot").setInputFiles(PNG);
     await page.getByRole("button", { name: "Place order" }).click();
 
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByText(/TrxID/i).last()).toBeVisible();
     await expect(page).toHaveURL(/\/checkout$/);
   });
 

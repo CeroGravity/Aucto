@@ -24,6 +24,15 @@ const envSchema = z.object({
   NEXT_PUBLIC_BKASH_NUMBER: z.string().default(""),
   NEXT_PUBLIC_NAGAD_NUMBER: z.string().default(""),
   NEXT_PUBLIC_FACEBOOK_URL: z.string().default(""),
+  // Notifications. "fake" (default) logs + captures, no network. "real" uses
+  // Telegram (owner alert) + Resend (customer receipt) when configured.
+  // "throw" is a test-only mode (a notifier that always throws) to prove
+  // notifications are non-blocking; never set in prod.
+  NOTIFY_PROVIDER: z.enum(["fake", "real", "throw"]).default("fake"),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_CHAT_ID: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -268,6 +268,8 @@ export const orders = pgTable("orders", {
   area: text("area").notNull(),
   city: text("city").notNull(),
   postcode: text("postcode"),
+  // Optional — BD customers are phone-first; receipt email sent only if given.
+  customerEmail: text("customer_email"),
   paymentRef: text("payment_ref"),
   // Manual MFS: customer-entered transaction id + stored screenshot key.
   trxId: text("trx_id"),

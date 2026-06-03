@@ -17,6 +17,7 @@ const shippingFields: Array<{
   name: keyof ShippingInput;
   label: string;
   autoComplete?: string;
+  type?: string;
 }> = [
   { name: "fullName", label: "Full name", autoComplete: "name" },
   { name: "phone", label: "Phone", autoComplete: "tel" },
@@ -24,6 +25,12 @@ const shippingFields: Array<{
   { name: "area", label: "Area / thana", autoComplete: "address-level2" },
   { name: "city", label: "City / district", autoComplete: "address-level1" },
   { name: "postcode", label: "Postcode (optional)", autoComplete: "postal-code" },
+  {
+    name: "email",
+    label: "Email (optional — for your receipt)",
+    autoComplete: "email",
+    type: "email",
+  },
 ];
 
 export function CheckoutForm({
@@ -79,7 +86,7 @@ export function CheckoutForm({
             <input
               id={field.name}
               name={field.name}
-              type="text"
+              type={field.type ?? "text"}
               autoComplete={field.autoComplete}
               defaultValue={defaultValues[field.name] ?? ""}
               className={inputClass}

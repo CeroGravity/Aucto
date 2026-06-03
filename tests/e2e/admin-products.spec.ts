@@ -63,9 +63,13 @@ test.describe("admin product lifecycle", () => {
     await expect(page.getByText(/Page not found/i)).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveCount(0);
 
-    // Publish.
+    // Publish. Wait for the action POST before asserting the status badge
+    // (status-action buttons refresh the page after the action resolves).
     await page.goto(editUrl);
-    await page.getByRole("button", { name: "Publish" }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+      page.getByRole("button", { name: "Publish" }).click(),
+    ]);
     await expect(page.getByTestId("product-status")).toHaveText("published");
 
     // Now visible on the storefront with the set price.
@@ -99,14 +103,20 @@ test.describe("admin product lifecycle", () => {
 
     // Unpublish → gone from storefront.
     await page.goto(editUrl);
-    await page.getByRole("button", { name: "Unpublish" }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+      page.getByRole("button", { name: "Unpublish" }).click(),
+    ]);
     await expect(page.getByTestId("product-status")).toHaveText("draft");
     await page.goto(`/products/${slugFromName}`);
     await expect(page.getByText(/Page not found/i)).toBeVisible();
 
     // Archive → hidden, but the admin record still loads (history-safe).
     await page.goto(editUrl);
-    await page.getByRole("button", { name: "Archive" }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+      page.getByRole("button", { name: "Archive" }).click(),
+    ]);
     await expect(page.getByTestId("product-status")).toHaveText("archived");
     await page.goto(`/products/${slugFromName}`);
     await expect(page.getByText(/Page not found/i)).toBeVisible();

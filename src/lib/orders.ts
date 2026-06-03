@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 
 import { db } from "@/lib/db";
 import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
+import { type NotifyOrder, notifier } from "@/lib/notifications";
 import { paymentProvider } from "@/lib/payments";
 import { CART_TAG } from "@/server/queries/cart";
 
@@ -69,7 +70,11 @@ export async function confirmAndFinalize(args: {
       return true;
     });
 
-    if (finalized) revalidateTag(CART_TAG);
+    if (finalized) {
+      revalidateTag(CART_TAG);
+      // Shelved gateway path: notify on first finalize, non-blocking.
+      await dispatchOrderNotifications(order.id);
+    }
   } catch (error) {
     if (error instanceof StockError) return { ok: false, reason: "stock" };
     throw error;
@@ -106,4 +111,62 @@ export async function restoreStockForOrder(orderId: number): Promise<boolean> {
     }
     return true;
   });
+}
+
+// Build the notification payload + fire owner alert and customer receipt. Each
+// channel is wrapped so a failure is logged and NEVER bubbles — callers invoke
+// this inside after() so it runs post-response, off the order's critical path.
+export async function dispatchOrderNotifications(
+  orderId: number,
+  // Injectable for tests (defaults to the env-selected notifier).
+  via = notifier,
+): Promise<void> {
+  let order: Awaited<ReturnType<typeof loadOrderForNotify>>;
+  try {
+    order = await loadOrderForNotify(orderId);
+  } catch (error) {
+    console.error(`[notify] failed to load order #${orderId}:`, error);
+    return;
+  }
+  if (!order) return;
+
+  try {
+    await via.notifyNewOrder(order);
+  } catch (error) {
+    console.error(`[notify] owner alert failed for order #${orderId}:`, error);
+  }
+  try {
+    await via.sendOrderReceipt(order);
+  } catch (error) {
+    console.error(`[notify] receipt failed for order #${orderId}:`, error);
+  }
+}
+
+async function loadOrderForNotify(orderId: number): Promise<NotifyOrder | null> {
+  const row = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: { items: true },
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    totalMinor: row.totalMinor,
+    subtotalMinor: row.subtotalMinor,
+    shippingMinor: row.shippingMinor,
+    paymentMethod: row.paymentMethod,
+    paymentStatus: row.paymentStatus,
+    orderStatus: row.orderStatus,
+    trxId: row.trxId,
+    fullName: row.fullName,
+    area: row.area,
+    city: row.city,
+    phone: row.phone,
+    customerEmail: row.customerEmail,
+    items: row.items.map((i) => ({
+      productName: i.productName,
+      size: i.size,
+      quantity: i.quantity,
+      unitPriceMinor: i.unitPriceMinor,
+    })),
+  };
 }

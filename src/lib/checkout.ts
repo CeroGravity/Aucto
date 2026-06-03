@@ -12,6 +12,12 @@ export const shippingSchema = z.object({
   area: z.string().trim().min(1, "Area / thana is required.").max(120),
   city: z.string().trim().min(1, "City / district is required.").max(120),
   postcode: z.string().trim().max(20).optional(),
+  // Optional receipt email. Empty string → undefined (no receipt attempt).
+  email: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? undefined : v))
+    .pipe(z.email("Enter a valid email.").optional()),
 });
 
 export type ShippingInput = z.infer<typeof shippingSchema>;

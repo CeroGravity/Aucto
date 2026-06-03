@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { CART_COOKIE, getCartIdFromCookie } from "@/lib/cart";
@@ -11,6 +12,7 @@ import { SHIPPING_MINOR, shippingSchema, trxIdSchema } from "@/lib/checkout";
 import { db } from "@/lib/db";
 import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
 import { env } from "@/lib/env";
+import { dispatchOrderNotifications } from "@/lib/orders";
 import { paymentProvider } from "@/lib/payments";
 import { isManualMethod, isMfsMethod } from "@/lib/payments/manual";
 import { storageProvider } from "@/lib/storage";
@@ -43,6 +45,7 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
     area: formData.get("area"),
     city: formData.get("city"),
     postcode: formData.get("postcode") || undefined,
+    email: formData.get("email") ?? "",
   });
   if (!shippingParsed.success) {
     return {
@@ -112,6 +115,7 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
           area: shipping.area,
           city: shipping.city,
           postcode: shipping.postcode ? shipping.postcode : null,
+          customerEmail: shipping.email ?? null,
           trxId,
           screenshotKey,
           stockDecremented: true,
@@ -148,7 +152,6 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
       return order.id;
     });
 
-    void result;
     // The guest cart is consumed by the order. Clear the cookie so the receipt
     // load resolves an empty cart immediately (getCartIdFromCookie → null →
     // EMPTY, bypassing the cached loadCart) — no stale header count, no race
@@ -156,6 +159,10 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
     const store = await cookies();
     store.delete(CART_COOKIE);
     revalidateTag(CART_TAG);
+
+    // Owner alert + customer receipt, post-response and non-blocking — never
+    // affects the order result or the receipt page (dispatch swallows errors).
+    after(() => dispatchOrderNotifications(result));
     return { ok: true, accessToken };
   } catch (error) {
     if (error instanceof StockError) {
