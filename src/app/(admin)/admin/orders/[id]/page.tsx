@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { OrderTimeline } from "@/components/admin/order-timeline";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/status-badge";
 import { AdminOrderActions } from "@/components/features/admin-order-actions";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatPriceMinor } from "@/lib/money";
 import { getAdminOrder } from "@/server/queries/admin-orders";
@@ -45,13 +46,24 @@ export default async function AdminOrderDetailPage({
         <h1 className="font-display font-bold text-2xl text-primary tracking-tight md:text-3xl">
           Order #{order.id}
         </h1>
-        <Badge variant="secondary">{order.orderStatus}</Badge>
-        <Badge variant={order.paymentStatus === "awaiting_verification" ? "accent" : "secondary"}>
-          {order.paymentStatus}
-        </Badge>
+        <OrderStatusBadge status={order.orderStatus} />
+        <PaymentStatusBadge status={order.paymentStatus} />
         <span className="text-muted-foreground text-sm">
           {METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod}
         </span>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-border p-5">
+        <h2 className="font-semibold">Timeline</h2>
+        <div className="mt-4">
+          <OrderTimeline
+            createdAt={order.createdAt}
+            confirmedAt={order.confirmedAt}
+            shippedAt={order.shippedAt}
+            deliveredAt={order.deliveredAt}
+            cancelledAt={order.cancelledAt}
+          />
+        </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-border p-5">

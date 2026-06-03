@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/status-badge";
 import { orderLifecycleEnum, paymentMethodEnum, paymentStatusEnum } from "@/lib/db/schema";
 import { formatPriceMinor } from "@/lib/money";
 import { listOrders } from "@/server/queries/admin-orders";
@@ -156,11 +156,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="border-border border-t">
+                // Stretched-link pattern: the row is positioned, and the order
+                // link's ::after overlay covers the whole row — so a click
+                // anywhere opens the order, while keeping a real keyboard-
+                // focusable anchor and native cmd/ctrl-click (new tab).
+                <tr
+                  key={row.id}
+                  className="group relative border-border border-t transition-colors hover:bg-muted/50 focus-within:bg-muted/50"
+                >
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/orders/${row.id}`}
-                      className="font-medium text-primary underline-offset-4 hover:underline"
+                      aria-label={`Open order ${row.id}`}
+                      className="font-medium text-primary underline-offset-4 after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {row.id}
                     </Link>
@@ -172,16 +180,10 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                   <td className="px-4 py-3">{formatPriceMinor(row.totalMinor)}</td>
                   <td className="px-4 py-3">{row.paymentMethod}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="secondary">{row.orderStatus}</Badge>
+                    <OrderStatusBadge status={row.orderStatus} />
                   </td>
                   <td className="px-4 py-3">
-                    <Badge
-                      variant={
-                        row.paymentStatus === "awaiting_verification" ? "accent" : "secondary"
-                      }
-                    >
-                      {row.paymentStatus}
-                    </Badge>
+                    <PaymentStatusBadge status={row.paymentStatus} />
                   </td>
                 </tr>
               ))
