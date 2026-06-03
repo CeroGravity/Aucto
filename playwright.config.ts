@@ -23,7 +23,10 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // Retry transient failures: the suite drives a remote Neon DB whose latency
+  // occasionally spikes past an action timeout. Retries let those self-recover
+  // (a genuine failure still fails on every attempt).
+  retries: 2,
   // Serial run keeps results reproducible when driving a system browser
   // (parallel instances starve CPU and make navigations flaky).
   workers: 1,

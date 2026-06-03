@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { CheckoutForm } from "@/components/features/checkout-form";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
@@ -24,7 +25,22 @@ export default async function CheckoutPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const cart = await getCart();
-  if (cart.lines.length === 0) redirect("/cart");
+  // Empty checkout renders an inline empty state (NOT redirect("/cart")) — a
+  // server-side redirect here fires during the post-order cart revalidation and
+  // bounces the customer through /cart between Place Order and the receipt (the
+  // empty-cart flash). An inline state has no such transient navigation.
+  if (cart.lines.length === 0) {
+    return (
+      <Container className="flex min-h-[50vh] flex-col items-center justify-center gap-4 py-16 text-center">
+        <h1 className="font-display font-bold text-3xl text-primary tracking-tight">
+          Your cart is empty
+        </h1>
+        <Button asChild>
+          <Link href="/products">Shop products</Link>
+        </Button>
+      </Container>
+    );
+  }
 
   const session = await auth();
   const totalMinor = cart.subtotalMinor + SHIPPING_MINOR;

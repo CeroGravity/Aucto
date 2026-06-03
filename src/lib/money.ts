@@ -20,3 +20,29 @@ export function formatPriceMinor(priceMinor: number): string {
       : `${grouper.format(taka)}.${poisha.toString().padStart(2, "0")}`;
   return `${negative ? "-" : ""}${TAKA}${body}`;
 }
+
+/**
+ * Parse a Taka amount (admin input, e.g. "2500" or "2500.50") to integer
+ * poisha. Returns null for invalid/negative input. Avoids float drift by
+ * parsing the fractional part as two digits of poisha directly.
+ * - "2500" → 250000
+ * - "2500.5" → 250050
+ * - "2500.50" → 250050
+ */
+export function parseTakaToMinor(input: string): number | null {
+  const trimmed = input.trim().replace(/,/g, "");
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(trimmed);
+  if (!match) return null;
+  const taka = Number(match[1]);
+  const frac = (match[2] ?? "").padEnd(2, "0");
+  const poisha = Number(frac);
+  if (!Number.isSafeInteger(taka)) return null;
+  return taka * 100 + poisha;
+}
+
+/** Integer poisha → plain Taka string for editing (no symbol/grouping). */
+export function minorToTakaInput(priceMinor: number): string {
+  const taka = Math.floor(priceMinor / 100);
+  const poisha = priceMinor % 100;
+  return poisha === 0 ? String(taka) : `${taka}.${poisha.toString().padStart(2, "0")}`;
+}

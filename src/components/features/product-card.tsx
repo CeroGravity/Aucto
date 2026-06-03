@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { ProductImage } from "@/components/ui/product-image";
 import { formatPriceMinor } from "@/lib/money";
-import type { ProductListItem } from "@/server/queries/products";
+import { displayImages, type ProductListItem } from "@/server/queries/products";
 
 export function ProductCard({ product }: { product: ProductListItem }) {
   const inStock = product.variants.some((variant) => variant.stock > 0);
-  const cover = product.images[0];
+  const cover = displayImages(product.images)[0];
 
   return (
     <Link
@@ -18,6 +18,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         {cover ? (
           <ProductImage
             placeholderKey={cover.placeholderKey}
+            storageKey={cover.storageKey}
             alt={cover.alt}
             className="transition-transform duration-300 group-hover:scale-105"
           />

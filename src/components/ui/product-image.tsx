@@ -21,29 +21,36 @@ function placeholderSrc(key: string): string {
 
 type ProductImageProps = {
   placeholderKey: string;
+  // When set, a real uploaded image is served from the public route; otherwise
+  // the deterministic placeholder renders.
+  storageKey?: string | null;
   alt: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
 };
 
-// Placeholder image layer. Deterministic per key, no external service.
-// To use real photos later, swap the `src` here — only this file changes.
+// Storefront product image. Uploaded images (public namespace) are served via
+// /api/images/<key> through next/image (optimizable); products with no upload
+// fall back to the deterministic placeholder (data-URI, unoptimized).
 export function ProductImage({
   placeholderKey,
+  storageKey,
   alt,
   className,
   sizes,
   priority,
 }: ProductImageProps) {
+  const uploaded = Boolean(storageKey);
+  const src = uploaded ? `/api/images/${storageKey}` : placeholderSrc(placeholderKey);
   return (
     <Image
-      src={placeholderSrc(placeholderKey)}
+      src={src}
       alt={alt}
       fill
       sizes={sizes ?? "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"}
       className={cn("object-cover", className)}
-      unoptimized
+      unoptimized={!uploaded}
       priority={priority}
     />
   );

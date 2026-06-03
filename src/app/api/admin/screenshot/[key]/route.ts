@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { storageProvider } from "@/lib/storage";
+import { isPrivateKey, storageProvider } from "@/lib/storage";
 
-// Role-gated retrieval of a payment screenshot. Admin only — never a public or
-// guessable URL. (The admin UI that consumes this lands in 5d.)
+// Role-gated retrieval of a payment screenshot. Admin only, and confined to the
+// PRIVATE namespace — a public (pub_) key is refused so this route can never
+// serve a product image, and the public route can never serve a screenshot.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ key: string }> }) {
   const session = await auth();
   if (session?.user?.role !== "admin") {
@@ -12,6 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
   }
 
   const { key } = await params;
+  if (!isPrivateKey(key)) return new NextResponse("Not found", { status: 404 });
   const file = await storageProvider.get(key);
   if (!file) return new NextResponse("Not found", { status: 404 });
 

@@ -1,5 +1,10 @@
-// Storage abstraction for uploaded files (payment screenshots). The local-disk
-// adapter is the default; a blob adapter is stubbed for deploy.
+// Storage abstraction for uploaded files.
+// PUBLIC  = product images, served unauthenticated via /api/images/[key].
+// PRIVATE = payment screenshots, served only via the admin-gated route.
+// Keys are namespaced by visibility (pub_ / prv_ prefix) so neither route can
+// ever serve the other's assets.
+
+export type Visibility = "public" | "private";
 
 export type StoredFile = {
   bytes: Buffer;
@@ -7,8 +12,8 @@ export type StoredFile = {
 };
 
 export interface StorageProvider {
-  /** Persist bytes, returning an opaque key (never a public URL). */
-  put(file: StoredFile): Promise<string>;
-  /** Read bytes back by key (for the role-gated retrieval route). */
+  /** Persist bytes, returning an opaque namespaced key (never a public URL). */
+  put(file: StoredFile, visibility: Visibility): Promise<string>;
+  /** Read bytes back by key. */
   get(key: string): Promise<StoredFile | null>;
 }

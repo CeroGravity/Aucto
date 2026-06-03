@@ -6,7 +6,7 @@ import { SizeSelector } from "@/components/features/size-selector";
 import { Container } from "@/components/ui/container";
 import { ProductImage } from "@/components/ui/product-image";
 import { formatPriceMinor } from "@/lib/money";
-import { getProductBySlug } from "@/server/queries/products";
+import { displayImages, getProductBySlug } from "@/server/queries/products";
 
 type ProductDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -29,7 +29,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     size: variant.size,
     stock: variant.stock,
   }));
-  const [cover, ...rest] = product.images;
+  const [cover, ...rest] = displayImages(product.images);
 
   return (
     <Container className="py-10 md:py-16">
@@ -39,6 +39,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             {cover ? (
               <ProductImage
                 placeholderKey={cover.placeholderKey}
+                storageKey={cover.storageKey}
                 alt={cover.alt}
                 priority
                 sizes="(min-width: 768px) 50vw, 100vw"
@@ -54,6 +55,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 >
                   <ProductImage
                     placeholderKey={image.placeholderKey}
+                    storageKey={image.storageKey}
                     alt={image.alt}
                     sizes="(min-width: 768px) 16vw, 33vw"
                   />

@@ -3,9 +3,10 @@
 import { randomBytes } from "node:crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
 
 import { auth } from "@/lib/auth";
-import { getCartIdFromCookie } from "@/lib/cart";
+import { CART_COOKIE, getCartIdFromCookie } from "@/lib/cart";
 import { SHIPPING_MINOR, shippingSchema, trxIdSchema } from "@/lib/checkout";
 import { db } from "@/lib/db";
 import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
@@ -62,7 +63,7 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
     const upload = await validateImageUpload(formData.get("screenshot"));
     if (!upload.ok) return { ok: false, error: upload.error };
     trxId = trx.data;
-    screenshotKey = await storageProvider.put(upload.image);
+    screenshotKey = await storageProvider.put(upload.image, "private");
   }
 
   const cartId = await getCartIdFromCookie();
@@ -148,6 +149,12 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
     });
 
     void result;
+    // The guest cart is consumed by the order. Clear the cookie so the receipt
+    // load resolves an empty cart immediately (getCartIdFromCookie → null →
+    // EMPTY, bypassing the cached loadCart) — no stale header count, no race
+    // with tag revalidation. Also bust the tag for any other cached reads.
+    const store = await cookies();
+    store.delete(CART_COOKIE);
     revalidateTag(CART_TAG);
     return { ok: true, accessToken };
   } catch (error) {

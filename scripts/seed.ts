@@ -71,7 +71,10 @@ const productSeed: ProductSeed[] = [
     featured: false,
     variants: v([
       ["XS", 5],
-      ["S", 8],
+      // High stock: the e2e suite places many compression-top "S" orders in one
+      // serial run; ample stock keeps it from depleting mid-suite (no assertion
+      // depends on the exact value). M stays 0 (OOS) and XL low for those tests.
+      ["S", 200],
       ["M", 0],
       ["L", 6],
       ["XL", 2],
@@ -278,6 +281,7 @@ async function main() {
           priceMinor: p.priceMinor,
           categoryId,
           featured: p.featured,
+          status: "published",
         })
         .returning();
       if (!product) throw new Error(`Failed to insert product: ${p.slug}`);

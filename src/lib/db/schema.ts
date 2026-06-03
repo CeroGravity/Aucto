@@ -16,6 +16,10 @@ import {
 
 export const sizeEnum = pgEnum("size", ["XS", "S", "M", "L", "XL", "XXL"]);
 
+// Storefront visibility. Only `published` shows on the storefront; `archived`
+// is hidden everywhere but kept for order-history FK integrity.
+export const productStatusEnum = pgEnum("product_status", ["draft", "published", "archived"]);
+
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
@@ -33,7 +37,9 @@ export const products = pgTable("products", {
     .notNull()
     .references(() => categories.id, { onDelete: "cascade" }),
   featured: boolean("featured").notNull().default(false),
+  status: productStatusEnum("status").notNull().default("draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const productVariants = pgTable(
@@ -55,8 +61,14 @@ export const productImages = pgTable("product_images", {
   productId: integer("product_id")
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
+  // Deterministic placeholder key (Phase 2). When `storageKey` is set, an
+  // uploaded image is served instead; otherwise the placeholder renders.
   placeholderKey: text("placeholder_key").notNull(),
+  // Public storage key for an uploaded image (null = placeholder-only row).
+  storageKey: text("storage_key"),
   alt: text("alt").notNull(),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  // Reused as sortOrder for gallery ordering.
   position: integer("position").notNull().default(0),
 });
 
@@ -137,6 +149,7 @@ export type Product = typeof products.$inferSelect;
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
 export type Size = (typeof sizeEnum.enumValues)[number];
+export type ProductStatus = (typeof productStatusEnum.enumValues)[number];
 export type Cart = typeof carts.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
 

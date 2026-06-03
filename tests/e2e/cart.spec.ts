@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-// compression-top: S in stock (8), XL low stock (2), M out of stock (0).
+// compression-top: S ample stock, XL low stock (2), M out of stock (0).
 const PDP = "/products/compression-top";
 
 async function addSize(page: Page, size: string): Promise<void> {

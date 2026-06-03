@@ -16,7 +16,7 @@ type NavItem = {
 const items: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
-  { label: "Products", href: "/admin/products", icon: Package, comingSoon: true },
+  { label: "Products", href: "/admin/products", icon: Package },
 ];
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {

@@ -26,7 +26,15 @@ test.describe("checkout", () => {
     await addToCart(page);
     await page.goto("/checkout");
     await fillShipping(page);
-    // COD is the default method.
+
+    // Record the main-frame navigation sequence to assert there is NO
+    // intermediate /cart hop (the empty-cart flash) between checkout and the
+    // receipt.
+    const nav: string[] = [];
+    page.on("framenavigated", (f) => {
+      if (f === page.mainFrame()) nav.push(new URL(f.url()).pathname);
+    });
+
     await page.getByRole("button", { name: "Place order" }).click();
 
     await page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/);
@@ -34,6 +42,10 @@ test.describe("checkout", () => {
     await expect(page.getByText(/Cash on Delivery/)).toBeVisible();
     await expect(page.getByText(/Pay .* on delivery/i)).toBeVisible();
     await expect(page.getByLabel("Cart, empty")).toBeVisible();
+
+    // No empty-cart flash: the order placement goes straight to /order/<token>
+    // without ever navigating to /cart.
+    expect(nav.some((p) => p === "/cart")).toBe(false);
   });
 
   test("bKash: TrxID + screenshot → under-verification receipt", async ({ page }) => {
@@ -90,8 +102,9 @@ test.describe("checkout", () => {
     await expect(page.getByText(/Thank you/i)).toHaveCount(0);
   });
 
-  test("checkout redirects to /cart when the cart is empty", async ({ page }) => {
+  test("empty cart at checkout shows an inline empty state (no /cart bounce)", async ({ page }) => {
     await page.goto("/checkout");
-    await page.waitForURL(/\/cart$/);
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByRole("heading", { name: "Your cart is empty" })).toBeVisible();
   });
 });

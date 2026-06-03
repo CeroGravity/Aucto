@@ -7,4 +7,5 @@ import type { StorageProvider } from "./types";
 export const storageProvider: StorageProvider =
   env.STORAGE_PROVIDER === "blob" ? new BlobStorageProvider() : new LocalStorageProvider();
 
-export type { StorageProvider, StoredFile } from "./types";
+export { isPrivateKey, isPublicKey } from "./keys";
+export type { StorageProvider, StoredFile, Visibility } from "./types";
