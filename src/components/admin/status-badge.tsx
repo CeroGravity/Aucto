@@ -18,7 +18,7 @@ const PAYMENT_CLASS: Record<PaymentStatusValue, string> = {
   unpaid: "bg-muted text-muted-foreground",
   awaiting_verification: "bg-accent/15 text-accent",
   paid: "bg-foreground text-background",
-  rejected: "bg-destructive/15 text-destructive",
+  rejected: "bg-destructive/15 text-destructive-text",
 };
 
 export function OrderStatusBadge({ status }: { status: OrderLifecycle }) {

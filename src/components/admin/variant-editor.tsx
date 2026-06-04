@@ -115,7 +115,7 @@ export function VariantEditor({ productId, variants }: { productId: number; vari
       ) : null}
 
       {error ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive-text text-sm">
           {error}
         </p>
       ) : null}

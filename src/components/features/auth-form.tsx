@@ -61,7 +61,9 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           {...register("email")}
           className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-        {errors.email ? <p className="text-destructive text-sm">{errors.email.message}</p> : null}
+        {errors.email ? (
+          <p className="text-destructive-text text-sm">{errors.email.message}</p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -76,7 +78,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         {errors.password ? (
-          <p className="text-destructive text-sm">{errors.password.message}</p>
+          <p className="text-destructive-text text-sm">{errors.password.message}</p>
         ) : null}
         {isRegister ? (
           <p className="text-muted-foreground text-xs">At least 8 characters.</p>
@@ -84,7 +86,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
       </div>
 
       {formError ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive-text text-sm">
           {formError}
         </p>
       ) : null}
@@ -97,14 +99,17 @@ export function AuthForm({ mode, action }: AuthFormProps) {
         {isRegister ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/login" className="font-medium text-primary underline underline-offset-4">
               Log in
             </Link>
           </>
         ) : (
           <>
             New to Aucto?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/register"
+              className="font-medium text-primary underline underline-offset-4"
+            >
               Create an account
             </Link>
           </>

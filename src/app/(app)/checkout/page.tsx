@@ -55,7 +55,7 @@ export default async function CheckoutPage({
       {statusMessage ? (
         <p
           role="alert"
-          className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+          className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive-text text-sm"
         >
           {statusMessage}
         </p>

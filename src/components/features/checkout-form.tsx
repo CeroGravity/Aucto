@@ -189,7 +189,7 @@ export function CheckoutForm({
       ) : null}
 
       {formError ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive-text text-sm">
           {formError}
         </p>
       ) : null}

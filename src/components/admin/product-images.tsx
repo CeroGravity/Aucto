@@ -138,7 +138,7 @@ export function ProductImages({ productId, images }: { productId: number; images
       <p className="text-muted-foreground text-xs">JPEG, PNG, or WebP — max 5MB.</p>
 
       {error ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive-text text-sm">
           {error}
         </p>
       ) : null}

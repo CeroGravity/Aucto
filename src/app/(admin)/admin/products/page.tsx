@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Products — Admin" };
 const STATUS_CLASS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   published: "bg-foreground text-background",
-  archived: "bg-destructive/15 text-destructive",
+  archived: "bg-destructive/15 text-destructive-text",
 };
 
 type SearchParams = Promise<{
