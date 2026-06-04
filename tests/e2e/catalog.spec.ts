@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 // Product cards link to /products/<slug>; filter chips link to /products?category=...
 // so this selector matches only product cards.

@@ -12,9 +12,11 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
     passWithNoTests: true,
-    // Several suites hit the real (remote) DB; run files serially so they don't
-    // contend on the pooled connection (and so the fake-notifier capture buffer
-    // isn't shared across parallel files).
+    // Two suites (restore-stock, dispatch-notify) create + mutate rows in the
+    // single shared test DB. Run test FILES serially so they don't race each
+    // other's order/stock state — this is data isolation against one DB, not a
+    // latency workaround (the DB is local). Tests within a file still run in
+    // order; pure-formatter suites are unaffected.
     fileParallelism: false,
   },
 });

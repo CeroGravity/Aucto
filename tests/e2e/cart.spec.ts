@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 // compression-top: S ample stock, XL low stock (2), M out of stock (0).
 const PDP = "/products/compression-top";

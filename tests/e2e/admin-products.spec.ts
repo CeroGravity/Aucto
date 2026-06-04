@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const PASSWORD = "password123";
 
@@ -9,6 +10,25 @@ async function register(page: Page, email: string): Promise<void> {
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/account$/);
+}
+
+// Click a product status-action button (Publish/Unpublish/Archive) and confirm
+// the new status persisted. The button calls a Server Action then
+// router.refresh(); rather than depend on that client repaint landing, we wait
+// for the action's transition to finish (button re-enables or unmounts), then
+// reload to read the authoritative server-rendered badge. Reloading removes any
+// dependence on refresh timing — the persisted DB state is the source of truth.
+async function clickStatus(page: Page, name: string, expectedStatus: string): Promise<void> {
+  const button = page.getByRole("button", { name, exact: true });
+  await expect(button).toBeEnabled(); // hydrated + actionable
+  // Wait for the Server Action's POST to complete (the DB write commits before
+  // the response returns) so a reload reads the new state.
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+    button.click(),
+  ]);
+  await page.reload();
+  await expect(page.getByTestId("product-status")).toHaveText(expectedStatus);
 }
 
 async function makeAdmin(page: Page, email: string): Promise<void> {
@@ -63,14 +83,9 @@ test.describe("admin product lifecycle", () => {
     await expect(page.getByText(/Page not found/i)).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveCount(0);
 
-    // Publish. Wait for the action POST before asserting the status badge
-    // (status-action buttons refresh the page after the action resolves).
+    // Publish — wait for the RSC repaint before asserting the badge.
     await page.goto(editUrl);
-    await Promise.all([
-      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
-      page.getByRole("button", { name: "Publish" }).click(),
-    ]);
-    await expect(page.getByTestId("product-status")).toHaveText("published");
+    await clickStatus(page, "Publish", "published");
 
     // Now visible on the storefront with the set price.
     await page.goto(`/products/${slugFromName}`);
@@ -92,32 +107,30 @@ test.describe("admin product lifecycle", () => {
     await page.goto(`/products/${slugFromName}`, { waitUntil: "networkidle" });
     await expect(page.getByText("৳1,800").first()).toBeVisible();
 
-    // Add a variant + stock → size selectable on the PDP.
+    // Add a variant + stock → size selectable on the PDP. Wait for the add
+    // action's POST to commit, then reload to read the new variant row (the
+    // editor repaints via router.refresh(); a reload reads committed state).
     await page.goto(editUrl);
     await page.getByLabel("New size").selectOption("M");
     await page.getByLabel("New stock").fill("7");
-    await page.getByRole("button", { name: "Add size" }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+      page.getByRole("button", { name: "Add size" }).click(),
+    ]);
+    await page.reload();
     await expect(page.getByLabel("Stock for M")).toBeVisible();
     await page.goto(`/products/${slugFromName}`);
     await expect(page.getByRole("button", { name: "M", exact: true })).toBeVisible();
 
     // Unpublish → gone from storefront.
     await page.goto(editUrl);
-    await Promise.all([
-      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
-      page.getByRole("button", { name: "Unpublish" }).click(),
-    ]);
-    await expect(page.getByTestId("product-status")).toHaveText("draft");
+    await clickStatus(page, "Unpublish", "draft");
     await page.goto(`/products/${slugFromName}`);
     await expect(page.getByText(/Page not found/i)).toBeVisible();
 
     // Archive → hidden, but the admin record still loads (history-safe).
     await page.goto(editUrl);
-    await Promise.all([
-      page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
-      page.getByRole("button", { name: "Archive" }).click(),
-    ]);
-    await expect(page.getByTestId("product-status")).toHaveText("archived");
+    await clickStatus(page, "Archive", "archived");
     await page.goto(`/products/${slugFromName}`);
     await expect(page.getByText(/Page not found/i)).toBeVisible();
     await page.goto(editUrl);
@@ -139,8 +152,7 @@ test.describe("product images", () => {
     await page.getByRole("button", { name: "Create product" }).click();
     await page.waitForURL(/\/admin\/products\/\d+$/);
     const editUrl = page.url();
-    await page.getByRole("button", { name: "Publish" }).click();
-    await expect(page.getByTestId("product-status")).toHaveText("published");
+    await clickStatus(page, "Publish", "published");
     const slug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const PNG = fileURLToPath(new URL("./../fixtures/payment.png", import.meta.url));
 const TXT = fileURLToPath(new URL("./../fixtures/not-an-image.txt", import.meta.url));
@@ -7,10 +8,13 @@ const TXT = fileURLToPath(new URL("./../fixtures/not-an-image.txt", import.meta.
 async function addToCart(page: Page): Promise<void> {
   await page.goto("/products/compression-top");
   await page.getByRole("button", { name: "S", exact: true }).click();
-  await page.getByRole("button", { name: "Add to cart" }).click();
+  // Wait for the add Server Action's POST (the DB write + cart Set-Cookie) to
+  // commit before navigating to checkout — the optimistic badge races it.
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
+    page.getByRole("button", { name: "Add to cart" }).click(),
+  ]);
   await expect(page.getByLabel("Cart, 1 items")).toBeVisible();
-  // Persist the optimistic add before the server reads the cart at checkout.
-  await page.waitForLoadState("networkidle");
 }
 
 async function fillShipping(page: Page, fullName = "Test Buyer"): Promise<void> {

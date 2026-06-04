@@ -7,10 +7,14 @@ import postgres from "postgres";
 
 import * as schema from "../src/lib/db/schema";
 
-try {
-  process.loadEnvFile(".env.local");
-} catch {
-  // fall back to ambient env
+// Skip .env.local under the local test DB (TEST_DATABASE_URL set by
+// scripts/with-test-db.ts) so e2e grants land on the test DB, never Neon.
+if (!process.env.TEST_DATABASE_URL) {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {
+    // fall back to ambient env
+  }
 }
 
 const email = process.argv[2]?.trim().toLowerCase();
@@ -20,7 +24,9 @@ if (!email) {
 }
 
 const databaseUrl =
-  process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL?.replace("-pooler", "");
+  process.env.TEST_DATABASE_URL ??
+  process.env.DATABASE_URL_UNPOOLED ??
+  process.env.DATABASE_URL?.replace("-pooler", "");
 if (!databaseUrl) {
   console.error("DATABASE_URL is not set. Add it to .env.local.");
   process.exit(1);

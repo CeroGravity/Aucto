@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("brand", () => {
   test("home hero shows the motto and footer shows the dictionary entry", async ({ page }) => {

@@ -23,17 +23,19 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  // Retry transient failures: the suite drives a remote Neon DB whose latency
-  // occasionally spikes past an action timeout. Retries let those self-recover
-  // (a genuine failure still fails on every attempt).
-  retries: 2,
+  // The suite runs against a LOCAL embedded Postgres (see scripts/with-test-db),
+  // so there is no remote latency to mask — retries stay OFF so nothing flaky
+  // hides behind a re-run. (A single CI retry guards only against rare
+  // infra/runner hiccups, not test flake.)
+  retries: process.env.CI ? 1 : 0,
   // Serial run keeps results reproducible when driving a system browser
-  // (parallel instances starve CPU and make navigations flaky).
+  // (parallel instances starve CPU and make navigations flaky). This is a
+  // browser/CPU constraint, not a DB one.
   workers: 1,
-  // Generous timeouts: server actions hit Neon (cold round-trips), and the
-  // first action per server boot is slow.
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  // Local DB is fast; keep a comfortable margin for the first action per server
+  // boot (Next route compile) without being so loose it hides hangs.
+  timeout: 30_000,
+  expect: { timeout: 7_500 },
   reporter: "list",
   use: {
     baseURL: "http://localhost:3000",
@@ -55,9 +57,16 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm build && pnpm start",
+    // `next start` directly (not the `pnpm start` wrapper) so it inherits the
+    // env from scripts/with-test-db.ts — DATABASE_URL already points at the
+    // local embedded Postgres. The wrapper's --env-file-if-exists=.env.local
+    // would otherwise reload the Neon prod URL over it.
+    command: "pnpm build && node node_modules/next/dist/bin/next start",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // Never reuse a server across invocations: each run boots its own embedded
+    // Postgres, and a server left over from a prior run would point at a cluster
+    // that no longer exists — a source of cross-run flake. Always start fresh.
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

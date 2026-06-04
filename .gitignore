@@ -21,6 +21,8 @@ next-env.d.ts
 /test-results
 /blob-report
 /.playwright
+# local embedded-postgres test cluster (scripts/with-test-db.ts)
+/.tmp
 
 # env files (keep the example)
 .env

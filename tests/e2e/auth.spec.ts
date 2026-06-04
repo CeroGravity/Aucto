@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 function uniqueEmail(): string {
   return `pw-${Date.now()}-${Math.floor(Math.random() * 1e6)}@aucto.test`;
