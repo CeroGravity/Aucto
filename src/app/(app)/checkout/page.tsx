@@ -11,7 +11,7 @@ import { env } from "@/lib/env";
 import { formatPriceMinor } from "@/lib/money";
 import { getCart } from "@/server/queries/cart";
 
-export const metadata: Metadata = { title: "Checkout" };
+export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
 const STATUS_MESSAGES: Record<string, string> = {
   declined: "Payment was declined. Your cart is intact — try again.",

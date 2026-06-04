@@ -67,7 +67,7 @@ describe("dispatchOrderNotifications (fake notifier)", () => {
     const alert = cap.find((c) => c.kind === "alert" && c.orderId === withEmail);
     const receipt = cap.find((c) => c.kind === "receipt" && c.orderId === withEmail);
     expect(alert).toBeTruthy();
-    expect(alert?.kind === "alert" && alert.message).toContain("#" + withEmail);
+    expect(alert?.kind === "alert" && alert.message).toContain(`#${withEmail}`);
     expect(receipt).toBeTruthy();
     expect(receipt?.kind === "receipt" && receipt.to).toBe("buyer@example.com");
   });

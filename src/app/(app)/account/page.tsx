@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { logoutUser } from "@/server/actions/auth";
 
-export const metadata: Metadata = { title: "Account" };
+export const metadata: Metadata = { title: "Account", robots: { index: false, follow: false } };
 
 export default async function AccountPage() {
   const session = await auth();

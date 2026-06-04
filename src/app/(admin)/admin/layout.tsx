@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -7,6 +8,9 @@ import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { requireAdminPage } from "@/lib/auth/admin";
 import { logoutUser } from "@/server/actions/auth";
+
+// The whole admin area is private — never index it.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 // Server-side gate for the whole /admin group (unchanged from 5d): logged out →
 // /login, non-admin → notFound. Wraps the panel shell (sidebar + topbar).

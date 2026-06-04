@@ -179,6 +179,9 @@ test.describe("admin order management", () => {
     await popup.bringToFront();
     await expect.poll(() => new URL(popup.url()).pathname).toMatch(/\/admin\/orders\/\d+$/);
     await popup.close();
+    // popup.bringToFront() backgrounded this page; re-foreground it so its SPA
+    // navigation isn't throttled (a backgrounded tab stalls the transition).
+    await page.bringToFront();
 
     // Normal click navigates in place. Arm the navigation wait BEFORE clicking
     // so a fast SPA transition can't complete before we start listening; use the

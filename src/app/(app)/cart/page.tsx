@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CartPanel } from "@/components/features/cart-panel";
 import { Container } from "@/components/ui/container";
 
-export const metadata: Metadata = { title: "Cart" };
+export const metadata: Metadata = { title: "Cart", robots: { index: false, follow: false } };
 
 export default function CartPage() {
   return (

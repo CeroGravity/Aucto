@@ -9,7 +9,10 @@ import { env } from "@/lib/env";
 import { formatPriceMinor } from "@/lib/money";
 import { getOrderByToken } from "@/server/queries/order";
 
-export const metadata: Metadata = { title: "Order confirmed" };
+export const metadata: Metadata = {
+  title: "Order confirmed",
+  robots: { index: false, follow: false },
+};
 
 type OrderPageProps = { params: Promise<{ token: string }> };
 
