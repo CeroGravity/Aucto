@@ -3,6 +3,7 @@
 // Re-running seedDatabase yields identical row counts (clear-and-reseed in one
 // transaction) — no duplicates, no cross-run state bleed.
 
+import { sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
@@ -241,20 +242,23 @@ export type SeedCounts = {
   images: number;
 };
 
-// Clear-and-reseed in one transaction. Clears child → parent: order_items
-// reference product_variants WITHOUT a cascade, so orders/order_items (and
-// cart_items, users for auth-created rows) must go before variants — otherwise
-// the reseed hits an FK violation and silently rolls back.
+// Clear-and-reseed in one transaction. TRUNCATE … RESTART IDENTITY resets the
+// serial sequences so product/variant IDs are IDENTICAL on every reseed — this
+// matters for the e2e harness: Next's unstable_cache (storefront PDP/catalog)
+// persists across the server process, so a per-test reseed that changed IDs
+// would leave the cached PDP serving stale variant IDs and add-to-cart would
+// hit an FK violation. Stable IDs keep the cache valid. CASCADE clears the
+// child tables (order_items/cart_items/images/variants) in one shot; users are
+// left intact (e2e creates unique-email accounts).
 export async function seedDatabase(db: PostgresJsDatabase<typeof schema>): Promise<SeedCounts> {
   await db.transaction(async (tx) => {
-    await tx.delete(schema.orderItems);
-    await tx.delete(schema.orders);
-    await tx.delete(schema.cartItems);
-    await tx.delete(schema.carts);
-    await tx.delete(schema.productImages);
-    await tx.delete(schema.productVariants);
-    await tx.delete(schema.products);
-    await tx.delete(schema.categories);
+    await tx.execute(sql`
+      TRUNCATE TABLE
+        ${schema.orderItems}, ${schema.orders}, ${schema.cartItems}, ${schema.carts},
+        ${schema.productImages}, ${schema.productVariants}, ${schema.products},
+        ${schema.categories}
+      RESTART IDENTITY CASCADE
+    `);
 
     const insertedCategories = await tx.insert(schema.categories).values(categorySeed).returning();
     const categoryIdBySlug = new Map(insertedCategories.map((c) => [c.slug, c.id]));

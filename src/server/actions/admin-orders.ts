@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 
 import { assertAdminAction } from "@/lib/auth/admin";
@@ -10,6 +10,7 @@ import type { OrderLifecycle } from "@/lib/db/schema";
 import { orders } from "@/lib/db/schema";
 import { canTransitionOrder, canTransitionPayment } from "@/lib/order-transitions";
 import { restoreStockForOrder } from "@/lib/orders";
+import { PRODUCTS_TAG } from "@/server/queries/products";
 
 export type AdminActionResult = { ok: true } | { ok: false; error: string };
 
@@ -18,6 +19,8 @@ const idSchema = z.coerce.number().int().positive();
 function revalidate(id: number) {
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
+  // Cancel/reject restore stock; refresh the tag-cached storefront OOS display.
+  revalidateTag(PRODUCTS_TAG);
 }
 
 async function loadOrder(id: number) {

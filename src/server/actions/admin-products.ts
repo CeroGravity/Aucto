@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 
 import { assertAdminAction } from "@/lib/auth/admin";
@@ -11,6 +11,7 @@ import { parseTakaToMinor } from "@/lib/money";
 import { productFormSchema, productSlug, stockAdjustSchema, variantSchema } from "@/lib/products";
 import { storageProvider } from "@/lib/storage";
 import { validateImageUpload } from "@/lib/uploads";
+import { PRODUCTS_TAG } from "@/server/queries/products";
 
 export type ProductActionResult = { ok: true; id: number } | { ok: false; error: string };
 export type SimpleResult = { ok: true } | { ok: false; error: string };
@@ -18,6 +19,9 @@ export type SimpleResult = { ok: true } | { ok: false; error: string };
 const idSchema = z.coerce.number().int().positive();
 
 function revalidate(id?: number) {
+  // Bust the tag-cached storefront reads (catalog, PDP, existence probe) so
+  // published-state / price / stock-display refresh immediately — no stale.
+  revalidateTag(PRODUCTS_TAG);
   revalidatePath("/admin/products");
   revalidatePath("/products");
   // Refresh every storefront PDP instance (price/status/variant edits).

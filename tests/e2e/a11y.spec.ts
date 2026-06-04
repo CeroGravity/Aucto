@@ -8,6 +8,9 @@ const PASSWORD = "password123";
 // Fail only on serious/critical violations (WCAG 2.1 A/AA tags). Returns the
 // offending violations so the assertion message names them.
 async function scan(page: Page, context?: string) {
+  // Wait for the document title to settle (App Router sets it after hydration);
+  // scanning mid-stream can momentarily see an empty <title> (document-title).
+  await page.waitForFunction(() => document.title.trim().length > 0).catch(() => {});
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
@@ -51,12 +54,35 @@ async function makeAdmin(page: Page, email: string): Promise<void> {
 
 async function placeOrder(page: Page): Promise<string> {
   await page.goto("/products/compression-top");
-  await page.getByRole("button", { name: "S", exact: true }).click();
+  // Wait for the size control to hydrate before interacting (a pre-hydration
+  // click is a no-op → empty cart). Select S, add, wait for the add POST.
+  const size = page.getByRole("button", { name: "S", exact: true });
+  await expect(size).toBeEnabled();
+  await size.click();
+  const add = page.getByRole("button", { name: "Add to cart" });
+  await expect(add).toBeEnabled();
   await Promise.all([
     page.waitForResponse((r) => r.request().method() === "POST" && r.status() === 200),
-    page.getByRole("button", { name: "Add to cart" }).click(),
+    add.click(),
   ]);
+  // Confirm the add committed (optimistic badge + server write) before leaving.
+  await expect(page.getByLabel("Cart, 1 items")).toBeVisible();
+
+  // Reach checkout with the cart present; if the server read raced the write,
+  // reload until the shipping form renders (the cookie is set, a fresh read
+  // resolves it).
   await page.goto("/checkout");
+  await expect(async () => {
+    if (
+      !(await page
+        .getByLabel("Full name")
+        .isVisible()
+        .catch(() => false))
+    ) {
+      await page.reload();
+    }
+    await expect(page.getByLabel("Full name")).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
   await page.getByLabel("Full name").fill("A11y Buyer");
   await page.getByLabel("Phone").fill("01700000000");
   await page.getByLabel("Address").fill("1 Test Rd");

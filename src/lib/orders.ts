@@ -6,6 +6,7 @@ import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema"
 import { type NotifyOrder, notifier } from "@/lib/notifications";
 import { paymentProvider } from "@/lib/payments";
 import { CART_TAG } from "@/server/queries/cart";
+import { PRODUCTS_TAG } from "@/server/queries/products";
 
 class StockError extends Error {}
 
@@ -72,6 +73,7 @@ export async function confirmAndFinalize(args: {
 
     if (finalized) {
       revalidateTag(CART_TAG);
+      revalidateTag(PRODUCTS_TAG); // stock decremented → refresh OOS display
       // Shelved gateway path: notify on first finalize, non-blocking.
       await dispatchOrderNotifications(order.id);
     }
