@@ -1,8 +1,6 @@
-import Link from "next/link";
-
+import { Hero3DLazy } from "@/components/hero/hero-3d-lazy";
+import { HeroStatic } from "@/components/hero/hero-static";
 import { JsonLd } from "@/components/seo/json-ld";
-import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
 import { env } from "@/lib/env";
 
 export default function HomePage() {
@@ -25,21 +23,18 @@ export default function HomePage() {
     url: base,
   };
 
+  // Hero: the static layer (HeroStatic) is the LCP and renders without JS; the
+  // decorative 3D scene (Hero3DLazy, aria-hidden, separate chunk) enhances over
+  // it after first paint on capable devices. The relative section reserves the
+  // space so the 3D mounting causes no layout shift.
   return (
-    <Container className="flex min-h-[70vh] flex-col items-center justify-center gap-10 py-24 text-center">
+    <>
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
-      <div className="flex max-w-3xl flex-col items-center gap-6">
-        <h1 className="font-display font-bold text-5xl text-primary tracking-tight md:text-7xl">
-          Move with Power
-        </h1>
-        <p className="max-w-md text-lg text-muted-foreground leading-relaxed">
-          Curated gear for Bangladesh. Clean design, honest prices, fast delivery.
-        </p>
-      </div>
-      <Button asChild size="lg">
-        <Link href="/products">Shop now</Link>
-      </Button>
-    </Container>
+      <section className="relative overflow-hidden">
+        <Hero3DLazy />
+        <HeroStatic />
+      </section>
+    </>
   );
 }

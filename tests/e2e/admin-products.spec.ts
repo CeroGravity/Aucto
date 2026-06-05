@@ -79,7 +79,7 @@ test.describe("admin product lifecycle", () => {
     // Draft → absent from the storefront: PDP shows not-found, no product UI.
     // (Next renders notFound() with a 200 on a dynamic route, so assert on
     // content, not the HTTP status.)
-    await page.goto(`/products/${slugFromName}`);
+    await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText(/Page not found/i)).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveCount(0);
 
@@ -88,7 +88,7 @@ test.describe("admin product lifecycle", () => {
     await clickStatus(page, "Publish", "published");
 
     // Now visible on the storefront with the set price.
-    await page.goto(`/products/${slugFromName}`);
+    await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
     await expect(page.getByText("৳1,500").first()).toBeVisible();
 
@@ -119,19 +119,19 @@ test.describe("admin product lifecycle", () => {
     ]);
     await page.reload();
     await expect(page.getByLabel("Stock for M")).toBeVisible();
-    await page.goto(`/products/${slugFromName}`);
+    await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("button", { name: "M", exact: true })).toBeVisible();
 
     // Unpublish → gone from storefront.
     await page.goto(editUrl);
     await clickStatus(page, "Unpublish", "draft");
-    await page.goto(`/products/${slugFromName}`);
+    await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText(/Page not found/i)).toBeVisible();
 
     // Archive → hidden, but the admin record still loads (history-safe).
     await page.goto(editUrl);
     await clickStatus(page, "Archive", "archived");
-    await page.goto(`/products/${slugFromName}`);
+    await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText(/Page not found/i)).toBeVisible();
     await page.goto(editUrl);
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();

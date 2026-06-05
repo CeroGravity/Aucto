@@ -42,7 +42,9 @@ export default defineConfig({
     trace: "on-first-retry",
     launchOptions: {
       ...(executablePath ? { executablePath } : {}),
-      args: ["--no-sandbox"],
+      // SwiftShader gives headless Chromium/Brave a software WebGL context so the
+      // decorative 3D hero's enhanced path is exercised in CI (no GPU needed).
+      args: ["--no-sandbox", "--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"],
     },
   },
   projects: [
