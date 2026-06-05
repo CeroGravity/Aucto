@@ -12,9 +12,6 @@ next-env.d.ts
 /build
 /dist
 
-# drizzle
-/drizzle
-
 # testing
 /coverage
 /playwright-report

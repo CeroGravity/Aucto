@@ -25,7 +25,8 @@ test.describe("auth", () => {
 
   test("/account redirects to /login when logged out", async ({ page }) => {
     await page.goto("/account");
-    await page.waitForURL(/\/login$/);
+    // The middleware sends logged-out users to /login (with a callbackUrl).
+    await page.waitForURL(/\/login(\?|$)/);
     await expect(page.getByRole("heading", { level: 1, name: "Log in" })).toBeVisible();
   });
 
@@ -36,7 +37,7 @@ test.describe("auth", () => {
 
     // Protected route now redirects again.
     await page.goto("/account");
-    await page.waitForURL(/\/login$/);
+    await page.waitForURL(/\/login(\?|$)/);
   });
 
   test("login works after registering", async ({ page }) => {

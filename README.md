@@ -7,10 +7,28 @@ Next.js 15 + TypeScript storefront. See `.claude/CLAUDE.md` for stack and conven
 ```bash
 pnpm install
 cp .env.example .env.local   # fill in DATABASE_URL, AUTH_SECRET, …
-pnpm db:push                 # apply schema to your Neon dev DB
+pnpm db:push                 # apply schema to your dev DB (dev/CI may keep push)
 pnpm db:seed                 # seed catalog
 pnpm dev
 ```
+
+### Schema management
+
+- **Dev/CI:** `pnpm db:push` (fast, no migration files).
+- **Production:** versioned migrations. `pnpm db:generate` emits SQL into `drizzle/`
+  from the schema; `pnpm db:migrate` applies them (direct/unpooled connection).
+  The generated migrations reproduce the schema exactly — verify with
+  `pnpm exec tsx scripts/check-migration-parity.ts` (migrated schema == push schema).
+
+### Storage & env
+
+- `STORAGE_PROVIDER=local` (default) writes uploads to disk for dev/CI;
+  `STORAGE_PROVIDER=blob` + `BLOB_READ_WRITE_TOKEN` uses Vercel Blob in prod.
+  Private payment screenshots are always served through the admin-gated route —
+  the blob URL is never sent to the client.
+- `src/lib/env.ts` fails the build/boot with a clear message if a provider is
+  enabled without its required vars (blob → token; notify=real → Telegram +
+  Resend keys).
 
 ## Testing
 

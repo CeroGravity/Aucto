@@ -137,7 +137,7 @@ test.describe("admin access control", () => {
   test("normal user gets not-found (no PII) on /admin", async ({ page }) => {
     await register(page, `user-${Date.now()}@aucto.test`);
     await page.goto("/admin/orders");
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Orders" })).toHaveCount(0);
   });
 

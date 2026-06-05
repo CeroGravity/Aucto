@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+
+// not-found responses are soft-404 (HTTP 200) on this Next version, so mark them
+// noindex — search engines won't index missing / draft / archived product URLs.
+export const metadata: Metadata = {
+  title: "Page not found",
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (

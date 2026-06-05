@@ -4,10 +4,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
-    // Product images are served same-origin from /api/images/<key>, which
-    // next/image optimizes via the built-in loader — no remotePatterns needed
-    // in dev. At deploy, add the blob host here, e.g.:
-    //   remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
+    // Product images are served same-origin from /api/images/<key> (which
+    // next/image optimizes via the built-in loader); with STORAGE_PROVIDER=blob
+    // a public blob URL may also be referenced, so allow the Vercel Blob host.
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },
 };
 

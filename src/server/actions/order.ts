@@ -2,7 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 
@@ -18,7 +18,6 @@ import { isManualMethod, isMfsMethod } from "@/lib/payments/manual";
 import { storageProvider } from "@/lib/storage";
 import { validateImageUpload } from "@/lib/uploads";
 import { CART_TAG } from "@/server/queries/cart";
-import { PRODUCTS_TAG } from "@/server/queries/products";
 
 export type PlaceOrderResult = { ok: true; redirectUrl: string } | { ok: false; error: string };
 export type PlaceManualResult = { ok: true; accessToken: string } | { ok: false; error: string };
@@ -160,10 +159,11 @@ export async function placeManualOrder(formData: FormData): Promise<PlaceManualR
     const store = await cookies();
     store.delete(CART_COOKIE);
     revalidateTag(CART_TAG);
-    // Stock was decremented — refresh the tag-cached storefront so OOS display
-    // updates promptly. (Checkout's atomic WHERE stock>=qty decrement remains
-    // the authority; this only keeps the *display* fresh.)
-    revalidateTag(PRODUCTS_TAG);
+    // Stock was decremented — refresh the storefront OOS display (request-scoped
+    // reads → a path revalidation suffices). Checkout's atomic WHERE stock>=qty
+    // decrement remains the authority; this only keeps the *display* fresh.
+    revalidatePath("/products");
+    revalidatePath("/products/[slug]", "page");
 
     // Owner alert + customer receipt, post-response and non-blocking — never
     // affects the order result or the receipt page (dispatch swallows errors).

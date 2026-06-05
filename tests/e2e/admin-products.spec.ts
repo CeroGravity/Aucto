@@ -53,7 +53,7 @@ test.describe("admin product access control", () => {
   test("normal user gets not-found on /admin/products/new", async ({ page }) => {
     await register(page, `puser-${Date.now()}@aucto.test`);
     await page.goto("/admin/products/new");
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
   });
 });
 
@@ -80,7 +80,7 @@ test.describe("admin product lifecycle", () => {
     // (Next renders notFound() with a 200 on a dynamic route, so assert on
     // content, not the HTTP status.)
     await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveCount(0);
 
     // Publish — wait for the RSC repaint before asserting the badge.
@@ -126,13 +126,13 @@ test.describe("admin product lifecycle", () => {
     await page.goto(editUrl);
     await clickStatus(page, "Unpublish", "draft");
     await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
 
     // Archive → hidden, but the admin record still loads (history-safe).
     await page.goto(editUrl);
     await clickStatus(page, "Archive", "archived");
     await page.goto(`/products/${slugFromName}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     await page.goto(editUrl);
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   });

@@ -1,12 +1,11 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { db } from "@/lib/db";
 import { cartItems, orderItems, orders, productVariants } from "@/lib/db/schema";
 import { type NotifyOrder, notifier } from "@/lib/notifications";
 import { paymentProvider } from "@/lib/payments";
 import { CART_TAG } from "@/server/queries/cart";
-import { PRODUCTS_TAG } from "@/server/queries/products";
 
 class StockError extends Error {}
 
@@ -73,7 +72,10 @@ export async function confirmAndFinalize(args: {
 
     if (finalized) {
       revalidateTag(CART_TAG);
-      revalidateTag(PRODUCTS_TAG); // stock decremented → refresh OOS display
+      // Stock decremented → refresh the storefront OOS display (request-scoped
+      // reads, so a path revalidation is enough).
+      revalidatePath("/products");
+      revalidatePath("/products/[slug]", "page");
       // Shelved gateway path: notify on first finalize, non-blocking.
       await dispatchOrderNotifications(order.id);
     }

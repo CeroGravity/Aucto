@@ -35,19 +35,36 @@ async function clickStatus(page: Page, name: string, expected: string): Promise<
   await expect(page.getByTestId("product-status")).toHaveText(expected);
 }
 
-test.describe("seo — real 404 status", () => {
-  test("nonexistent product returns HTTP 404", async ({ page }) => {
-    const res = await page.goto("/products/does-not-exist-xyz");
-    expect(res?.status()).toBe(404);
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+// The DB-backed Edge 404 probe was dropped in 7a; missing/draft/archived
+// products now render the branded not-found UI, which is noindex (so the
+// soft-404 responses are never indexed). Published PDPs render normally and are
+// indexable.
+async function expectNotFound(page: Page): Promise<void> {
+  // The branded not-found heading (not the <title>, which also contains the text).
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
+  // noindex so crawlers don't index the missing/draft/archived URL. (Next can
+  // emit several robots metas; every one must be noindex.)
+  const robots = page.locator('meta[name="robots"]');
+  const count = await robots.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    await expect(robots.nth(i)).toHaveAttribute("content", /noindex/);
+  }
+}
+
+test.describe("seo — not-found behavior (noindex)", () => {
+  test("nonexistent product → noindexed not-found UI", async ({ page }) => {
+    await page.goto("/products/does-not-exist-xyz", { waitUntil: "domcontentloaded" });
+    await expectNotFound(page);
   });
 
-  test("published product returns HTTP 200", async ({ page }) => {
+  test("published product renders normally (indexable)", async ({ page }) => {
     const res = await page.goto(`/products/${PUBLISHED_SLUG}`);
     expect(res?.status()).toBe(200);
+    await expect(page.getByText(/Page not found/i)).toHaveCount(0);
   });
 
-  test("draft and archived products return HTTP 404", async ({ page }) => {
+  test("draft and archived products → noindexed not-found UI", async ({ page }) => {
     await makeAdmin(page, `seo-admin-${Date.now()}@aucto.test`);
     const name = `SEO Tee ${Date.now()}`;
     await page.goto("/admin/products/new");
@@ -63,20 +80,22 @@ test.describe("seo — real 404 status", () => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    // Created as a draft → PDP is 404.
-    const draftRes = await page.goto(`/products/${slug}`);
-    expect(draftRes?.status()).toBe(404);
+    // Created as a draft → storefront not-found.
+    await page.goto(`/products/${slug}`, { waitUntil: "domcontentloaded" });
+    await expectNotFound(page);
 
-    // Publish → 200, then archive → 404 again.
+    // Publish → visible on the storefront.
     await page.goto(editUrl);
     await clickStatus(page, "Publish", "published");
-    const pubRes = await page.goto(`/products/${slug}`);
-    expect(pubRes?.status()).toBe(200);
+    await page.goto(`/products/${slug}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    await expect(page.getByText(/Page not found/i)).toHaveCount(0);
 
+    // Archive → not-found again.
     await page.goto(editUrl);
     await clickStatus(page, "Archive", "archived");
-    const archRes = await page.goto(`/products/${slug}`);
-    expect(archRes?.status()).toBe(404);
+    await page.goto(`/products/${slug}`, { waitUntil: "domcontentloaded" });
+    await expectNotFound(page);
   });
 });
 

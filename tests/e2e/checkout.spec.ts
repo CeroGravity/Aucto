@@ -105,7 +105,7 @@ test.describe("checkout", () => {
 
   test("order page denies an unknown token (IDOR)", async ({ page }) => {
     await page.goto("/order/this-token-does-not-exist");
-    await expect(page.getByText(/Page not found/i)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
     await expect(page.getByText(/Thank you/i)).toHaveCount(0);
   });
 
