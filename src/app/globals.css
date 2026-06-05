@@ -43,6 +43,14 @@
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #1b2a4d;
+
+  /* Hero 3D (light theme): navy energy streams over a light field, with a
+     restrained steel-cyan accent on leading edges (on-brand, no orange). The
+     static fallback's glow uses the same accent. */
+  --hero-base: #1b2a4d;
+  --hero-mid: #3a4f7a;
+  --hero-accent: #2dd4bf;
+  --hero-fog: #eef1f6;
 }
 
 /* Design tokens — dark theme */
@@ -79,6 +87,14 @@
   --border: #2e3f60;
   --input: #2e3f60;
   --ring: #ffffff;
+
+  /* Hero 3D (dark theme): the navy IS the page background, so the streams must
+     be LIGHTER than it to read — steel-blue lines + a brighter cyan accent that
+     glows against the navy. */
+  --hero-base: #5b7bb5;
+  --hero-mid: #8fa8d6;
+  --hero-accent: #5eead4;
+  --hero-fog: #1b2a4d;
 }
 
 @theme inline {
@@ -133,6 +149,16 @@
     color: var(--foreground);
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Theme-aware hero accent glow (the static fallback's "energy" hint). Uses the
+     --hero-accent token so it adapts to light/dark. */
+  .hero-glow {
+    background: radial-gradient(
+      60% 55% at 50% 42%,
+      color-mix(in srgb, var(--hero-accent) 16%, transparent),
+      transparent 70%
+    );
   }
 
   /* Smooth theme switch — only after mount (no flash on first paint). */

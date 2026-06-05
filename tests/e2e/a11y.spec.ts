@@ -148,12 +148,16 @@ test.describe("a11y — admin", () => {
     await page.goto("/admin/products");
     await scan(page, "admin products");
 
-    // A product edit page (forms + image manager + status actions).
-    await page
-      .getByRole("link", { name: /Compression Top/i })
-      .first()
-      .click();
-    await page.waitForURL(/\/admin\/products\/\d+$/);
+    // A product edit page (forms + image manager + status actions). Use the
+    // domcontentloaded gate — the edit page's "load" can stall on image
+    // subresources, and the scan waits for readiness itself.
+    await Promise.all([
+      page.waitForURL(/\/admin\/products\/\d+$/, { waitUntil: "domcontentloaded" }),
+      page
+        .getByRole("link", { name: /Compression Top/i })
+        .first()
+        .click(),
+    ]);
     await scan(page, "admin product edit");
   });
 });

@@ -183,13 +183,11 @@ test.describe("admin order management", () => {
     // navigation isn't throttled (a backgrounded tab stalls the transition).
     await page.bringToFront();
 
-    // Normal click navigates in place. Arm the navigation wait BEFORE clicking
-    // so a fast SPA transition can't complete before we start listening; use the
-    // domcontentloaded gate (the detail page's "load" can stall on images).
-    await Promise.all([
-      page.waitForURL(/\/admin\/orders\/\d+$/, { waitUntil: "domcontentloaded" }),
-      rowLink.click(),
-    ]);
+    // Normal click navigates in place. Poll the URL after the click (rather than
+    // gating on a navigation/load event, which a just-foregrounded tab can stall
+    // on) — the destination URL is the assertion that matters.
+    await rowLink.click();
+    await expect.poll(() => new URL(page.url()).pathname).toMatch(/\/admin\/orders\/\d+$/);
   });
 
   test("MFS: mark paid → payment paid", async ({ page }) => {
