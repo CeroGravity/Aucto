@@ -156,16 +156,15 @@ test.describe("a11y — admin", () => {
     await page.goto("/admin/products");
     await scan(page, "admin products");
 
-    // A product edit page (forms + image manager + status actions). Use the
-    // domcontentloaded gate — the edit page's "load" can stall on image
-    // subresources, and the scan waits for readiness itself.
-    await Promise.all([
-      page.waitForURL(/\/admin\/products\/\d+$/, { waitUntil: "domcontentloaded" }),
-      page
-        .getByRole("link", { name: /Compression Top/i })
-        .first()
-        .click(),
-    ]);
+    // A product edit page (forms + image manager + status actions). Navigate by
+    // the link's href rather than clicking — the stretched-link row can race
+    // hydration of the SPA navigation on the heavy admin list, leaving the click
+    // a no-op; goto(href) is deterministic. (The scan waits for readiness.)
+    const editLink = page.getByRole("link", { name: /Compression Top/i }).first();
+    await expect(editLink).toBeVisible();
+    const editHref = await editLink.getAttribute("href");
+    await page.goto(editHref ?? "/admin/products", { waitUntil: "domcontentloaded" });
+    await page.waitForURL(/\/admin\/products\/\d+$/);
     await scan(page, "admin product edit");
   });
 });

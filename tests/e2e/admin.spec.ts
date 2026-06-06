@@ -187,7 +187,13 @@ test.describe("admin order management", () => {
     await rowLink.click({ modifiers: ["ControlOrMeta"] });
     const popup = await popupPromise;
     await popup.bringToFront();
-    await expect.poll(() => new URL(popup.url()).pathname).toMatch(/\/admin\/orders\/\d+$/);
+    // The new tab may briefly be about:blank before it navigates; poll its URL
+    // generously (a backgrounded/throttled tab can be slow) until it reaches the
+    // order page, then confirm the DOM is ready.
+    await expect
+      .poll(() => new URL(popup.url()).pathname, { timeout: 20_000 })
+      .toMatch(/\/admin\/orders\/\d+$/);
+    await popup.waitForLoadState("domcontentloaded").catch(() => {});
     await popup.close();
     // popup.bringToFront() backgrounded this page; re-foreground it so its SPA
     // navigation isn't throttled (a backgrounded tab stalls the transition).

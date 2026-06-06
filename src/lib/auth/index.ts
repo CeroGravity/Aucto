@@ -44,7 +44,20 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
   oauthProviders.push(Google({ allowDangerousEmailAccountLinking: true }));
 }
 if (process.env.AUTH_FACEBOOK_ID && process.env.AUTH_FACEBOOK_SECRET) {
-  oauthProviders.push(Facebook({ allowDangerousEmailAccountLinking: true }));
+  oauthProviders.push(
+    Facebook({
+      allowDangerousEmailAccountLinking: true,
+      // Request only public_profile. Facebook rejects "email" as a scope unless
+      // the app has Advanced Access for it (App Review) — requesting it on a
+      // dev/standard-access app throws "Invalid Scopes: email". public_profile
+      // is always valid; Facebook still returns the email field for app
+      // admins/testers and apps granted email access. Add "email" back to the
+      // scope once the app has Advanced Access for the email permission.
+      authorization: {
+        params: { scope: "public_profile" },
+      },
+    }),
+  );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
