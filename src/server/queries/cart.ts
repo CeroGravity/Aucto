@@ -86,11 +86,3 @@ export async function getCart(): Promise<CartView> {
   if (cartId === null) return EMPTY;
   return loadCart(cartId);
 }
-
-export async function getCartCount(): Promise<number> {
-  const cartId = await getCartIdFromCookie();
-  if (cartId === null) return 0;
-  // Reuses the same cached load → no extra DB round-trip when both the header
-  // count and the drawer render in one request.
-  return (await loadCart(cartId)).count;
-}

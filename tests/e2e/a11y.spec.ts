@@ -35,21 +35,27 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Create account" }).click(),
+  ]);
 }
 
 async function makeAdmin(page: Page, email: string): Promise<void> {
   await register(page, email);
   execFileSync("pnpm", ["grant-admin", email], { stdio: "ignore" });
   await page.goto("/account");
-  await page.getByRole("button", { name: "Log out" }).click();
-  await page.waitForURL(/\/$/);
+  await Promise.all([
+    page.waitForURL(/\/$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log out" }).click(),
+  ]);
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log in" }).click(),
+  ]);
 }
 
 async function placeOrder(page: Page): Promise<string> {
@@ -88,8 +94,10 @@ async function placeOrder(page: Page): Promise<string> {
   await page.getByLabel("Address").fill("1 Test Rd");
   await page.getByLabel("Area / thana").fill("Gulshan");
   await page.getByLabel("City / district").fill("Dhaka");
-  await page.getByRole("button", { name: "Place order" }).click();
-  await page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/);
+  await Promise.all([
+    page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Place order" }).click(),
+  ]);
   return page.url();
 }
 

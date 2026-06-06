@@ -9,16 +9,20 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Create account" }).click(),
+  ]);
 }
 
 async function login(page: Page, email: string): Promise<void> {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log in" }).click(),
+  ]);
 }
 
 // Register → grant admin via the owner script → re-auth so the JWT carries the
@@ -27,8 +31,10 @@ async function makeAdmin(page: Page, email: string): Promise<void> {
   await register(page, email);
   execFileSync("pnpm", ["grant-admin", email], { stdio: "ignore" });
   await page.goto("/account");
-  await page.getByRole("button", { name: "Log out" }).click();
-  await page.waitForURL(/\/$/);
+  await Promise.all([
+    page.waitForURL(/\/$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log out" }).click(),
+  ]);
   await login(page, email);
 }
 
@@ -96,8 +102,10 @@ async function placeCod(page: Page): Promise<void> {
   await addToCart(page);
   await gotoCheckoutWithCart(page);
   await fillShipping(page);
-  await page.getByRole("button", { name: "Place order" }).click();
-  await page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/);
+  await Promise.all([
+    page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Place order" }).click(),
+  ]);
 }
 
 async function placeBkash(page: Page): Promise<void> {
@@ -107,8 +115,10 @@ async function placeBkash(page: Page): Promise<void> {
   await page.getByText("bKash / Nagad", { exact: true }).click();
   await page.getByLabel("TrxID").fill("ADMINFLOW1");
   await page.getByLabel("Payment screenshot").setInputFiles(PNG);
-  await page.getByRole("button", { name: "Place order" }).click();
-  await page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/);
+  await Promise.all([
+    page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Place order" }).click(),
+  ]);
 }
 
 // Open the most recent order's admin detail page. The dashboard "Recent orders"

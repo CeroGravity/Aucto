@@ -9,11 +9,26 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("password123");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Create account" }).click(),
+  ]);
 }
 
 test.describe("auth", () => {
+  test("login + register show accessible OAuth buttons", async ({ page }) => {
+    for (const path of ["/login", "/register"]) {
+      await page.goto(path);
+      const google = page.getByRole("button", { name: "Continue with Google" });
+      const facebook = page.getByRole("button", { name: "Continue with Facebook" });
+      await expect(google).toBeVisible();
+      await expect(facebook).toBeVisible();
+      // Real, keyboard-focusable buttons (not baked-in images).
+      await google.focus();
+      await expect(google).toBeFocused();
+    }
+  });
+
   test("register logs in and shows the account page", async ({ page }) => {
     const email = uniqueEmail();
     await register(page, email);
@@ -32,8 +47,10 @@ test.describe("auth", () => {
 
   test("logout returns to a logged-out state", async ({ page }) => {
     await register(page, uniqueEmail());
-    await page.getByRole("button", { name: "Log out" }).click();
-    await page.waitForURL(/\/$/);
+    await Promise.all([
+      page.waitForURL(/\/$/, { waitUntil: "domcontentloaded" }),
+      page.getByRole("button", { name: "Log out" }).click(),
+    ]);
 
     // Protected route now redirects again.
     await page.goto("/account");
@@ -43,14 +60,18 @@ test.describe("auth", () => {
   test("login works after registering", async ({ page }) => {
     const email = uniqueEmail();
     await register(page, email);
-    await page.getByRole("button", { name: "Log out" }).click();
-    await page.waitForURL(/\/$/);
+    await Promise.all([
+      page.waitForURL(/\/$/, { waitUntil: "domcontentloaded" }),
+      page.getByRole("button", { name: "Log out" }).click(),
+    ]);
 
     await page.goto("/login");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill("password123");
-    await page.getByRole("button", { name: "Log in" }).click();
-    await page.waitForURL(/\/account$/);
+    await Promise.all([
+      page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+      page.getByRole("button", { name: "Log in" }).click(),
+    ]);
     await expect(page.getByText(email)).toBeVisible();
   });
 

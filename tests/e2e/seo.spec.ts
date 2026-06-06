@@ -9,21 +9,27 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Create account" }).click(),
+  ]);
 }
 
 async function makeAdmin(page: Page, email: string): Promise<void> {
   await register(page, email);
   execFileSync("pnpm", ["grant-admin", email], { stdio: "ignore" });
   await page.goto("/account");
-  await page.getByRole("button", { name: "Log out" }).click();
-  await page.waitForURL(/\/$/);
+  await Promise.all([
+    page.waitForURL(/\/$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log out" }).click(),
+  ]);
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(/\/account$/);
+  await Promise.all([
+    page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "Log in" }).click(),
+  ]);
 }
 
 async function clickStatus(page: Page, name: string, expected: string): Promise<void> {
@@ -72,8 +78,10 @@ test.describe("seo — not-found behavior (noindex)", () => {
     await page.getByLabel("Description").fill("seo test");
     await page.getByLabel("Category").selectOption({ index: 1 });
     await page.getByLabel("Price (৳)").fill("1500");
-    await page.getByRole("button", { name: "Create product" }).click();
-    await page.waitForURL(/\/admin\/products\/\d+$/);
+    await Promise.all([
+      page.waitForURL(/\/admin\/products\/\d+$/, { waitUntil: "domcontentloaded" }),
+      page.getByRole("button", { name: "Create product" }).click(),
+    ]);
     const editUrl = page.url();
     const slug = name
       .toLowerCase()

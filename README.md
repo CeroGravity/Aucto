@@ -29,6 +29,16 @@ pnpm dev
 - `src/lib/env.ts` fails the build/boot with a clear message if a provider is
   enabled without its required vars (blob → token; notify=real → Telegram +
   Resend keys).
+- With `STORAGE_PROVIDER=blob` + `NEXT_PUBLIC_BLOB_BASE_URL` set, public product
+  images serve straight from Blob's CDN via `next/image`; otherwise they go
+  through the `/api/images` proxy (dev/CI). Private screenshots are always gated.
+
+### OAuth (optional)
+
+Google + Facebook sign-in register only when their env pair is present
+(`AUTH_GOOGLE_ID/SECRET`, `AUTH_FACEBOOK_ID/SECRET`) — dev/CI without them work
+fine and fall back to email/password. See `.env.example` for the names and the
+provider callback URLs.
 
 ## Testing
 

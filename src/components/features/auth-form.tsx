@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { OAuthButtons } from "@/components/features/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import type { AuthResult } from "@/server/actions/auth";
 
@@ -49,51 +50,61 @@ export function AuthForm({ mode, action }: AuthFormProps) {
   const isRegister = mode === "register";
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <div className="flex flex-col gap-2">
-        <label htmlFor="email" className="font-medium text-sm">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          {...register("email")}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        {errors.email ? (
-          <p className="text-destructive-text text-sm">{errors.email.message}</p>
-        ) : null}
+    <div className="flex flex-col gap-5">
+      <OAuthButtons />
+
+      <div className="flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-muted-foreground text-xs uppercase tracking-wide">or</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="password" className="font-medium text-sm">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete={isRegister ? "new-password" : "current-password"}
-          {...register("password")}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        {errors.password ? (
-          <p className="text-destructive-text text-sm">{errors.password.message}</p>
-        ) : null}
-        {isRegister ? (
-          <p className="text-muted-foreground text-xs">At least 8 characters.</p>
-        ) : null}
-      </div>
+      <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="font-medium text-sm">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            {...register("email")}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          {errors.email ? (
+            <p className="text-destructive-text text-sm">{errors.email.message}</p>
+          ) : null}
+        </div>
 
-      {formError ? (
-        <p role="alert" className="text-destructive-text text-sm">
-          {formError}
-        </p>
-      ) : null}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="font-medium text-sm">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            autoComplete={isRegister ? "new-password" : "current-password"}
+            {...register("password")}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          {errors.password ? (
+            <p className="text-destructive-text text-sm">{errors.password.message}</p>
+          ) : null}
+          {isRegister ? (
+            <p className="text-muted-foreground text-xs">At least 8 characters.</p>
+          ) : null}
+        </div>
 
-      <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Please wait…" : isRegister ? "Create account" : "Log in"}
-      </Button>
+        {formError ? (
+          <p role="alert" className="text-destructive-text text-sm">
+            {formError}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="lg" disabled={pending}>
+          {pending ? "Please wait…" : isRegister ? "Create account" : "Log in"}
+        </Button>
+      </form>
 
       <p className="text-center text-muted-foreground text-sm">
         {isRegister ? (
@@ -115,6 +126,6 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           </>
         )}
       </p>
-    </form>
+    </div>
   );
 }

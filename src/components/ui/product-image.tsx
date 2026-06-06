@@ -30,9 +30,20 @@ type ProductImageProps = {
   priority?: boolean;
 };
 
+// Public base of the Blob store (prod). When set, public images serve straight
+// from Blob's CDN via next/image (remotePatterns allows the host) instead of
+// proxying through /api/images. Empty in dev/CI → the local proxy route is used.
+// NEXT_PUBLIC_* is inlined at build, so this stays client-safe (no env import).
+const BLOB_BASE = (process.env.NEXT_PUBLIC_BLOB_BASE_URL ?? "").replace(/\/$/, "");
+
+function uploadedSrc(storageKey: string): string {
+  return BLOB_BASE ? `${BLOB_BASE}/${storageKey}` : `/api/images/${storageKey}`;
+}
+
 // Storefront product image. Uploaded images (public namespace) are served via
-// /api/images/<key> through next/image (optimizable); products with no upload
-// fall back to the deterministic placeholder (data-URI, unoptimized).
+// Blob's CDN (prod) or the /api/images proxy (dev/CI) through next/image
+// (optimizable); products with no upload fall back to the deterministic
+// placeholder (data-URI, unoptimized).
 export function ProductImage({
   placeholderKey,
   storageKey,
@@ -42,7 +53,7 @@ export function ProductImage({
   priority,
 }: ProductImageProps) {
   const uploaded = Boolean(storageKey);
-  const src = uploaded ? `/api/images/${storageKey}` : placeholderSrc(placeholderKey);
+  const src = storageKey ? uploadedSrc(storageKey) : placeholderSrc(placeholderKey);
   return (
     <Image
       src={src}

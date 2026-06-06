@@ -9,6 +9,13 @@ const envSchema = z
     DATABASE_URL_UNPOOLED: z.url().optional(),
     // Auth.js session/JWT secret.
     AUTH_SECRET: z.string().min(1),
+    // OAuth providers (optional). Auth.js v5 auto-detects these; the Node auth
+    // config registers Google/Facebook only when their pair is present, so
+    // dev/CI without creds still boots and the Credentials path is unaffected.
+    AUTH_GOOGLE_ID: z.string().optional(),
+    AUTH_GOOGLE_SECRET: z.string().optional(),
+    AUTH_FACEBOOK_ID: z.string().optional(),
+    AUTH_FACEBOOK_SECRET: z.string().optional(),
     // Payment provider selection + SSLCommerz sandbox credentials (optional;
     // app runs on the fake adapter without them).
     PAYMENT_PROVIDER: z.enum(["fake", "sslcommerz"]).default("fake"),
@@ -21,6 +28,11 @@ const envSchema = z
     STORAGE_PROVIDER: z.enum(["local", "blob"]).default("local"),
     LOCAL_UPLOAD_DIR: z.string().default("./uploads"),
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
+    // Public base URL of the Blob store (e.g. https://<id>.public.blob.vercel-storage.com).
+    // When set (prod + STORAGE_PROVIDER=blob), public product images are served
+    // straight from Blob's CDN via next/image instead of proxying through the
+    // app's /api/images route. Public — it's the storefront image host.
+    NEXT_PUBLIC_BLOB_BASE_URL: z.string().default(""),
     // Public merchant numbers + contact (sent to the client; not secrets).
     NEXT_PUBLIC_BKASH_NUMBER: z.string().default(""),
     NEXT_PUBLIC_NAGAD_NUMBER: z.string().default(""),

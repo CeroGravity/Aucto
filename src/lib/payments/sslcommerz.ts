@@ -1,3 +1,7 @@
+// ⚠ INTENTIONALLY SHELVED — not dead code. A complete, tested SSLCommerz gateway
+// adapter kept behind PAYMENT_PROVIDER=sslcommerz for a future card-gateway
+// launch. Today's live payment path is COD + manual bKash/Nagad (see manual.ts);
+// this is selected via env in payments/index.ts. Do not delete.
 import { env } from "@/lib/env";
 import type {
   ConfirmInput,

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 
-import { auth, signIn, signOut } from "@/lib/auth";
+import { signIn, signOut } from "@/lib/auth";
 import { mergeGuestCartIntoUser } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -89,10 +89,4 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 
 export async function logoutUser(): Promise<void> {
   await signOut({ redirectTo: "/" });
-}
-
-// Convenience for Server Components that need the current user.
-export async function getCurrentUser() {
-  const session = await auth();
-  return session?.user ?? null;
 }
