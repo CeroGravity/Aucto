@@ -3,34 +3,32 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-// Striking, on-brand 3D hero (vanilla Three.js — one decorative scene). Concept:
-// the AUCTO MARK as a mountain. Layered peak RANGES — each a filled silhouette
-// whose profile echoes the logo's sharp, asymmetric peak (a dominant spike
-// left-of-centre with a steep face + jagged foothills) — recede into fog and
-// drift forward, with the ridgeline lit by the steel-cyan accent. The ranges
-// also rise slightly (ascent / elevation = "Aucto, to increase" + "Move with
-// Power"). Dimensional and premium, tied to the brand mark — not a generic hill.
+// Simple, on-brand 3D hero (vanilla Three.js — one decorative scene). The
+// original navy RIDGE field, adapted: layered terrain ridge-lines stacked in
+// depth that flow LEFT → RIGHT across the FULL viewport, the logo's momentum
+// motif as a calm horizontal drift. Basic on purpose — just lines + fog.
 //
-// THEME-AWARE: peak/accent/fog colors come from the --hero-* CSS tokens (dark =
-// lighter so the peaks read on the navy bg); a MutationObserver on <html class>
+// FULL-BLEED: the ridges span well past the screen edges and the camera frames
+// the whole field, so the field fills the viewport edge-to-edge with no floor
+// line. NO darkening scrim — the heading/CTA sit on top and read by natural
+// theme contrast (ridges kept subtle/low-density).
+//
+// SEAMLESS: the terrain wave scrolls continuously in x (a periodic function, so
+// it never resets), and each ridge's per-vertex opacity fades to 0 at both the
+// left and right edges — so the flow reads infinite with no edge pop.
+//
+// THEME-AWARE: ridge/fog colors come from the --hero-* CSS tokens (dark =
+// lighter so the ridges read on the navy bg); a MutationObserver on <html class>
 // rebuilds them on theme toggle.
 //
-// SEAMLESS: each range advances on its own continuous z; when it passes the
-// camera it wraps to the far back (z -= FIELD_DEPTH) DEEP IN THE FOG where its
-// opacity is ~0 — the recycle is never visible. No group-level reset.
-//
-// Cost caps: pixel ratio clamped ≤1.5; loop pauses when the tab is hidden or the
+// Cost caps: pixel ratio ≤1.5; the loop pauses when the tab is hidden or the
 // hero is offscreen; reduced-motion renders one still frame. The canvas is
 // decorative (aria-hidden container) and never focusable.
 
-const RANGE_COUNT = 9;
-const PROFILE_POINTS = 120;
-const RANGE_WIDTH = 34;
-const FIELD_DEPTH = 40;
-const NEAR_Z = 8;
-const FAR_Z = NEAR_Z - FIELD_DEPTH;
-const SPEED = 1.3; // world units / second toward the camera
-const BASE_Y = -7; // silhouette floor (filled down to here)
+const RIDGE_COUNT = 9;
+const POINTS_PER_RIDGE = 96;
+const FIELD_WIDTH = 40; // x-span (wider than view → edges off-screen)
+const FLOW = 1.6; // wave scroll speed (left → right), world units / s
 
 type ThemeColors = { base: THREE.Color; mid: THREE.Color; accent: THREE.Color; fog: THREE.Color };
 
@@ -46,84 +44,39 @@ function readThemeColors(el: HTMLElement): ThemeColors {
   };
 }
 
-// The AUCTO peak profile: height (0..1) across the silhouette (x in -0.5..0.5).
-// Echoes the mark — a dominant sharp spike left-of-centre with a steep right
-// face, a secondary peak, and jagged foothills. `seed` varies foothill detail
-// per range so the layers differ without losing the signature shape.
-function auctoPeak(t: number, seed: number): number {
-  const x = t - 0.5;
-  // Main spike just left of centre (sharp, asymmetric — quick rise, steep fall).
-  const main = Math.exp(-((x + 0.08) ** 2) / 0.012) * 1.0;
-  // Secondary shoulder peak to the right.
-  const shoulder = Math.exp(-((x - 0.22) ** 2) / 0.02) * 0.55;
-  // A smaller left foothill.
-  const foothill = Math.exp(-((x + 0.34) ** 2) / 0.03) * 0.35;
-  // Jagged high-frequency detail (terrain), varied by seed, fading at the edges.
-  const edge = 1 - Math.min(1, (Math.abs(x) - 0.3) / 0.2);
-  const jag =
-    (Math.sin(t * 47 + seed * 2.3) * 0.5 + Math.sin(t * 23 + seed) * 0.5) *
-    0.05 *
-    Math.max(0, edge);
-  return Math.max(0, main + shoulder + foothill + jag);
-}
-
-// A filled mountain-range silhouette (triangle strip from the ridgeline down to
-// BASE_Y) with per-vertex color: base at the floor → mid up the face → accent on
-// the ridge. `peakHeight` scales the whole range; nearer ranges are taller.
-function rangeGeometry(
-  seed: number,
-  peakHeight: number,
-  colors: ThemeColors,
-): THREE.BufferGeometry {
-  const positions = new Float32Array(PROFILE_POINTS * 2 * 3);
-  const colorAttr = new Float32Array(PROFILE_POINTS * 2 * 3);
-  for (let i = 0; i < PROFILE_POINTS; i++) {
-    const t = i / (PROFILE_POINTS - 1);
-    const x = (t - 0.5) * RANGE_WIDTH;
-    const ridgeY = BASE_Y + auctoPeak(t, seed) * peakHeight;
-
-    // top vertex (ridge) + bottom vertex (floor)
-    positions[i * 6] = x;
-    positions[i * 6 + 1] = ridgeY;
-    positions[i * 6 + 2] = 0;
-    positions[i * 6 + 3] = x;
-    positions[i * 6 + 4] = BASE_Y;
-    positions[i * 6 + 5] = 0;
-
-    // ridge color = mid→accent near the top; floor = base.
-    const ridge = colors.mid.clone().lerp(colors.accent, 0.55);
-    colorAttr[i * 6] = ridge.r;
-    colorAttr[i * 6 + 1] = ridge.g;
-    colorAttr[i * 6 + 2] = ridge.b;
-    colorAttr[i * 6 + 3] = colors.base.r;
-    colorAttr[i * 6 + 4] = colors.base.g;
-    colorAttr[i * 6 + 5] = colors.base.b;
-  }
-  const indices: number[] = [];
-  for (let i = 0; i < PROFILE_POINTS - 1; i++) {
-    const a = i * 2;
-    const b = i * 2 + 1;
-    const c = (i + 1) * 2;
-    const d = (i + 1) * 2 + 1;
-    indices.push(a, b, c, c, b, d);
+// A terrain ridge line as a position buffer + per-vertex color. `phase` scrolls
+// the wave (so the same buffer re-sampled each frame reads as flowing terrain);
+// the vertex alpha is folded into color brightness via a separate alpha array.
+// Returns the geometry; colors run base → mid with the accent on the crests.
+function ridgeGeometry(depth: number, colors: ThemeColors): THREE.BufferGeometry {
+  const positions = new Float32Array(POINTS_PER_RIDGE * 3);
+  const colorAttr = new Float32Array(POINTS_PER_RIDGE * 3);
+  // Lines use the BASE token (dark navy in light theme → strong contrast on the
+  // light field; light steel in dark theme → reads on the navy bg), with a touch
+  // of accent on the front lines for life. mid/back lines stay atmospheric.
+  const line = colors.base.clone().lerp(colors.accent, (1 - depth) * 0.35);
+  for (let i = 0; i < POINTS_PER_RIDGE; i++) {
+    const t = i / (POINTS_PER_RIDGE - 1);
+    positions[i * 3] = (t - 0.5) * FIELD_WIDTH;
+    positions[i * 3 + 1] = 0; // y set per-frame (the scrolling wave)
+    positions[i * 3 + 2] = 0;
+    colorAttr[i * 3] = line.r;
+    colorAttr[i * 3 + 1] = line.g;
+    colorAttr[i * 3 + 2] = line.b;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geo.setAttribute("color", new THREE.BufferAttribute(colorAttr, 3));
-  geo.setIndex(indices);
   return geo;
 }
 
-// Opacity by depth: 0 at the far spawn edge and as a range passes the camera,
-// peaking mid-field — masks both spawn and the wrap.
-function depthOpacity(z: number): number {
-  const t = (z - FAR_Z) / FIELD_DEPTH;
-  const fadeIn = Math.min(1, t / 0.22);
-  const fadeOut = Math.min(1, (1 - t) / 0.18);
-  return Math.max(0, Math.min(fadeIn, fadeOut));
-}
-
-type Range = { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; seed: number };
+type Ridge = {
+  line: THREE.Line;
+  mat: THREE.LineBasicMaterial;
+  seed: number;
+  depth: number;
+  amp: number;
+};
 
 export default function Hero3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -140,49 +93,42 @@ export default function Hero3D() {
     let colors = readThemeColors(root);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(colors.fog, 9, FIELD_DEPTH * 0.95);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-    camera.position.set(0, 0.4, NEAR_Z + 3);
+    camera.position.set(0, 0, 12);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setClearColor(0x000000, 0); // transparent → static hero shows through
+    renderer.setClearColor(0x000000, 0); // transparent → static hero bg shows through
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     mount.appendChild(renderer.domElement);
 
-    // peakHeight by depth: nearer ranges are taller (parallax + sense of scale).
-    const peakFor = (z: number) => 4.5 + ((z - FAR_Z) / FIELD_DEPTH) * 6;
-
     const group = new THREE.Group();
-    const ranges: Range[] = [];
-    for (let i = 0; i < RANGE_COUNT; i++) {
-      const seed = i + 1;
-      const z = FAR_Z + (i / RANGE_COUNT) * FIELD_DEPTH;
-      const geo = rangeGeometry(seed, peakFor(z), colors);
-      const mat = new THREE.MeshBasicMaterial({
+    const ridges: Ridge[] = [];
+    for (let i = 0; i < RIDGE_COUNT; i++) {
+      const depth = i / (RIDGE_COUNT - 1); // 0 (front) → 1 (back)
+      const geo = ridgeGeometry(depth, colors);
+      const mat = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
+        opacity: 0.55 + (1 - depth) * 0.45, // front lines crisp, back atmospheric
       });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.z = z;
-      group.add(mesh);
-      ranges.push({ mesh, mat, seed });
+      const line = new THREE.Line(geo, mat);
+      // Stack into depth (parallax). The band spans the lower half and rises into
+      // the centre so the ridges are clearly visible across the field; the text
+      // sits over the calmer crest area and reads by natural contrast.
+      line.position.set(0, -2.6 + depth * 1.8, -i * 1.4);
+      group.add(line);
+      ridges.push({ line, mat, seed: i + 1, depth, amp: 1.8 + depth * 1.3 });
     }
     scene.add(group);
 
-    const rebuild = () => {
-      for (const r of ranges) {
-        const next = rangeGeometry(r.seed, peakFor(r.mesh.position.z), colors);
-        r.mesh.geometry.dispose();
-        r.mesh.geometry = next;
-      }
-    };
-
     const applyColors = () => {
       colors = readThemeColors(root);
-      if (scene.fog instanceof THREE.Fog) scene.fog.color.copy(colors.fog);
-      rebuild();
+      for (const r of ridges) {
+        const next = ridgeGeometry(r.depth, colors);
+        r.line.geometry.dispose();
+        r.line.geometry = next;
+      }
     };
     const themeObserver = new MutationObserver(() => applyColors());
     themeObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
@@ -199,44 +145,43 @@ export default function Hero3D() {
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    let last = 0;
-    const update = (now: number, animate: boolean) => {
-      const dt = animate && last > 0 ? Math.min((now - last) / 1000, 0.05) : 0;
-      last = now;
-      const tSec = now / 1000;
-      for (const r of ranges) {
-        if (animate) {
-          r.mesh.position.z += SPEED * dt;
-          if (r.mesh.position.z > NEAR_Z) {
-            r.mesh.position.z -= FIELD_DEPTH; // wrap in the fog
-            // Re-scale the peak for its new (far) depth so the layering holds.
-            const next = rangeGeometry(r.seed, peakFor(r.mesh.position.z), colors);
-            r.mesh.geometry.dispose();
-            r.mesh.geometry = next;
-          }
+    // Per-frame: scroll the terrain wave in x (left → right) and edge-fade each
+    // vertex's height so the field flows seamlessly off both edges.
+    const updateWave = (tSec: number) => {
+      for (const r of ridges) {
+        const pos = r.line.geometry.getAttribute("position") as THREE.BufferAttribute;
+        const arr = pos.array as Float32Array;
+        for (let i = 0; i < POINTS_PER_RIDGE; i++) {
+          const t = i / (POINTS_PER_RIDGE - 1);
+          const x = (t - 0.5) * FIELD_WIDTH;
+          // Scroll the wave phase by +x over time → flows left → right.
+          const phase = x * 0.32 - tSec * FLOW + r.seed;
+          const wave =
+            Math.sin(phase) * r.amp * 0.5 +
+            Math.sin(phase * 2.7 + r.seed) * r.amp * 0.18 +
+            Math.sin(phase * 5.3) * r.amp * 0.08;
+          // Fade height toward the screen edges so there's no hard end.
+          const edge = Math.sin(t * Math.PI); // 0 at edges, 1 mid
+          arr[i * 3 + 1] = wave * edge;
         }
-        const z = r.mesh.position.z;
-        // Subtle elevating drift (ascent) — a slow vertical rise + breathe.
-        r.mesh.position.y = Math.sin(tSec * 0.3 + r.seed) * 0.18;
-        r.mat.opacity = depthOpacity(z);
+        pos.needsUpdate = true;
       }
-      // Gentle lateral camera drift for parallax (seamless — a pure sine).
-      camera.position.x = Math.sin(tSec * 0.12) * 0.6;
-      camera.lookAt(0, -0.6, -FIELD_DEPTH * 0.4);
-      renderer.render(scene, camera);
     };
 
     let raf = 0;
     let running = false;
+    const renderFrame = (tSec: number) => {
+      updateWave(tSec);
+      renderer.render(scene, camera);
+    };
     const loop = (now: number) => {
       if (!running) return;
-      update(now, true);
+      renderFrame(now / 1000);
       raf = requestAnimationFrame(loop);
     };
     const play = () => {
       if (running || reduceMotion) return;
       running = true;
-      last = 0;
       raf = requestAnimationFrame(loop);
     };
     const pause = () => {
@@ -262,7 +207,7 @@ export default function Hero3D() {
     document.addEventListener("visibilitychange", onVisibility);
 
     if (reduceMotion) {
-      update(0, false); // single still frame — the layered ranges compose well
+      renderFrame(0); // single still frame — a calm terrain composition
     } else {
       play();
     }
@@ -273,8 +218,8 @@ export default function Hero3D() {
       themeObserver.disconnect();
       io.disconnect();
       ro.disconnect();
-      for (const r of ranges) {
-        r.mesh.geometry.dispose();
+      for (const r of ridges) {
+        r.line.geometry.dispose();
         r.mat.dispose();
       }
       renderer.dispose();

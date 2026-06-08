@@ -31,7 +31,11 @@ export default function HomePage() {
     <>
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
-      <section className="relative overflow-hidden">
+      {/* Full-bleed hero: pulled up under the sticky 64px header (-mt-16) so the
+          animation reaches the very top, and -mb-24 cancels the footer's top
+          margin so it flows all the way DOWN to the footer line — no gap, no
+          mid-screen cutoff. The header (z-40, semi-transparent) floats over it. */}
+      <section className="relative -mt-16 -mb-24 overflow-hidden">
         <Hero3DLazy />
         <HeroStatic />
       </section>

@@ -161,6 +161,18 @@
     );
   }
 
+  /* Full-bleed atmospheric hero field — a vertical token gradient that matches
+     the 3D background quad, so the hero fills the viewport with no hard horizon.
+     Token-based → adapts light/dark. */
+  .hero-field {
+    background: linear-gradient(
+      to bottom,
+      var(--hero-fog) 0%,
+      color-mix(in srgb, var(--hero-fog) 88%, var(--hero-mid)) 100%
+    );
+  }
+
+
   /* Smooth theme switch — only after mount (no flash on first paint). */
   .theme-ready * {
     transition:
