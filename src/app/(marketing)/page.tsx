@@ -23,18 +23,15 @@ export default function HomePage() {
     url: base,
   };
 
-  // Hero: the static layer (HeroStatic) is the LCP and renders without JS; the
-  // decorative 3D scene (Hero3DLazy, aria-hidden, separate chunk) enhances over
-  // it after first paint on capable devices. The relative section reserves the
-  // space so the 3D mounting causes no layout shift.
+  // The home page is the full-bleed hero only — its "Shop now" CTA takes the user
+  // to the all-products catalog. The hero is pulled up under the sticky 64px
+  // header (-mt-16) so the animation reaches the very top, and -mb-24 cancels the
+  // footer's top margin so it flows down to the footer line (no gap/cutoff). The
+  // header (z-40, semi-transparent) floats over it.
   return (
     <>
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
-      {/* Full-bleed hero: pulled up under the sticky 64px header (-mt-16) so the
-          animation reaches the very top, and -mb-24 cancels the footer's top
-          margin so it flows all the way DOWN to the footer line — no gap, no
-          mid-screen cutoff. The header (z-40, semi-transparent) floats over it. */}
       <section className="relative -mt-16 -mb-24 overflow-hidden">
         <Hero3DLazy />
         <HeroStatic />

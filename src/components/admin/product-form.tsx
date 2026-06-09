@@ -17,6 +17,7 @@ export type ProductFormDefaults = {
   categoryId?: number;
   price?: string;
   published?: boolean;
+  featured?: boolean;
 };
 
 export function ProductForm({
@@ -33,6 +34,7 @@ export function ProductForm({
     categoryId: number;
     price: string;
     published: boolean;
+    featured: boolean;
   }) => Promise<ProductActionResult>;
   submitLabel: string;
 }) {
@@ -50,6 +52,7 @@ export function ProductForm({
       categoryId: Number(fd.get("categoryId") ?? 0),
       price: String(fd.get("price") ?? ""),
       published: fd.get("published") === "on",
+      featured: fd.get("featured") === "on",
     };
     startTransition(async () => {
       const result = await action(input);
@@ -126,6 +129,16 @@ export function ProductForm({
           className="size-4"
         />
         Published (visible on the storefront)
+      </label>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="featured"
+          defaultChecked={defaults?.featured ?? false}
+          className="size-4"
+        />
+        Featured (sorted first on the products page)
       </label>
 
       {error ? (

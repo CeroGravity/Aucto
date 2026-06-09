@@ -28,6 +28,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     categoryId: number;
     price: string;
     published: boolean;
+    featured: boolean;
   }) {
     "use server";
     return updateProduct(productId, input);
@@ -68,6 +69,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
             categoryId: product.categoryId,
             price: minorToTakaInput(product.priceMinor),
             published: product.status === "published",
+            featured: product.featured,
           }}
           action={action}
           submitLabel="Save changes"

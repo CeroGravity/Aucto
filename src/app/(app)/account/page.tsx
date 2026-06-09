@@ -1,17 +1,26 @@
+import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { PhoneSettings } from "@/components/features/phone-settings";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 import { logoutUser } from "@/server/actions/auth";
 
 export const metadata: Metadata = { title: "Account", robots: { index: false, follow: false } };
 
 export default async function AccountPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user?.id) redirect("/login");
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { phone: true },
+  });
 
   return (
     <Container className="max-w-2xl py-16">
@@ -22,6 +31,13 @@ export default async function AccountPage() {
       <div className="mt-8 flex flex-col gap-1">
         <span className="text-muted-foreground text-sm">Signed in as</span>
         <span className="font-medium">{session.user.email}</span>
+      </div>
+
+      <Separator className="my-8" />
+
+      <h2 className="font-display font-bold text-primary text-xl">Contact</h2>
+      <div className="mt-4">
+        <PhoneSettings phone={user?.phone ?? null} />
       </div>
 
       <Separator className="my-8" />

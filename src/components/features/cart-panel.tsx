@@ -11,7 +11,7 @@ import { formatPriceMinor } from "@/lib/money";
 // Shared cart body for the drawer and the /cart page. Reads the optimistic cart
 // from context so both update in the same tick as a mutation.
 export function CartPanel() {
-  const { cart } = useCart();
+  const { cart, setOpen } = useCart();
 
   if (cart.lines.length === 0) {
     return (
@@ -42,7 +42,12 @@ export function CartPanel() {
         </p>
         <Separator className="my-4" />
         <Button asChild size="lg" className="w-full">
-          <Link href="/checkout">Checkout</Link>
+          {/* Close the drawer as we navigate, so the user lands on /checkout
+              with no drawer lingering over it. Harmless on the /cart page (the
+              drawer isn't open there). */}
+          <Link href="/checkout" onClick={() => setOpen(false)}>
+            Checkout
+          </Link>
         </Button>
       </div>
     </div>

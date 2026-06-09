@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Facebook from "next-auth/providers/facebook";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
 
@@ -34,30 +33,15 @@ const credentials = Credentials({
   },
 });
 
-// OAuth providers are registered ONLY when their env vars are present, so
-// dev/CI without credentials still boots and the Credentials path is unaffected.
-// allowDangerousEmailAccountLinking links an OAuth sign-in to an existing user
-// with the same email — safe here because Google/Facebook return verified
-// emails (see report caveat); it avoids the OAuthAccountNotLinked dead-end.
+// Google OAuth is registered ONLY when its env vars are present, so dev/CI
+// without credentials still boots and the Credentials path is unaffected.
+// allowDangerousEmailAccountLinking links a Google sign-in to an existing user
+// with the same email — safe because Google returns a verified email; it avoids
+// the OAuthAccountNotLinked dead-end. (Facebook was dropped: it can't return an
+// email without App Review's Advanced Access.)
 const oauthProviders: NextAuthConfig["providers"] = [];
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
   oauthProviders.push(Google({ allowDangerousEmailAccountLinking: true }));
-}
-if (process.env.AUTH_FACEBOOK_ID && process.env.AUTH_FACEBOOK_SECRET) {
-  oauthProviders.push(
-    Facebook({
-      allowDangerousEmailAccountLinking: true,
-      // Request only public_profile. Facebook rejects "email" as a scope unless
-      // the app has Advanced Access for it (App Review) — requesting it on a
-      // dev/standard-access app throws "Invalid Scopes: email". public_profile
-      // is always valid; Facebook still returns the email field for app
-      // admins/testers and apps granted email access. Add "email" back to the
-      // scope once the app has Advanced Access for the email permission.
-      authorization: {
-        params: { scope: "public_profile" },
-      },
-    }),
-  );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -71,8 +55,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [credentials, ...oauthProviders],
   events: {
     // Shared guest→user cart merge for EVERY sign-in method. The Credentials
-    // server actions also call this (idempotent), but OAuth has no server action
-    // of its own, so the merge must live here to cover Google/Facebook too.
+    // server actions also call this (idempotent), but Google has no server action
+    // of its own, so the merge must live here to cover OAuth too.
     async signIn({ user }) {
       if (user?.id) {
         await mergeGuestCartIntoUser(user.id).catch(() => {

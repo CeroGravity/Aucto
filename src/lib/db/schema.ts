@@ -167,6 +167,10 @@ export const users = pgTable("users", {
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: text("image"),
   passwordHash: text("password_hash"),
+  // BD mobile number. Required at email/password registration; nullable because
+  // Google sign-ups have no phone from the provider (they set it at checkout /
+  // in account settings). Prefills the shipping phone for logged-in checkout.
+  phone: text("phone"),
   role: roleEnum("role").notNull().default("user"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

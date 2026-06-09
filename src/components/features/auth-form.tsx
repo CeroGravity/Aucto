@@ -11,16 +11,27 @@ import { OAuthButtons } from "@/components/features/oauth-buttons";
 import { Button } from "@/components/ui/button";
 import type { AuthResult } from "@/server/actions/auth";
 
-const schema = z.object({
+// Phone is required + validated only at registration (client-side hint; the
+// server re-validates with the same BD rule). Login ignores it.
+const baseShape = {
   email: z.email("Enter a valid email."),
   password: z.string().min(1, "Enter your password."),
+};
+const loginSchema = z.object(baseShape);
+const registerSchema = z.object({
+  ...baseShape,
+  phone: z
+    .string()
+    .trim()
+    .regex(/^(?:\+?880|0)1[3-9]\d{8}$/, "Enter a valid Bangladesh mobile number."),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = { email: string; password: string; phone?: string };
 
 type AuthFormProps = {
   mode: "login" | "register";
-  action: (email: string, password: string) => Promise<AuthResult>;
+  // phone is "" for login; the server validates it on register.
+  action: (email: string, password: string, phone: string) => Promise<AuthResult>;
 };
 
 export function AuthForm({ mode, action }: AuthFormProps) {
@@ -28,16 +39,18 @@ export function AuthForm({ mode, action }: AuthFormProps) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
 
+  const isRegister = mode === "register";
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(isRegister ? registerSchema : loginSchema) });
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
     startTransition(async () => {
-      const result = await action(values.email, values.password);
+      const result = await action(values.email, values.password, values.phone ?? "");
       if (result.ok) {
         router.push("/account");
         router.refresh();
@@ -46,8 +59,6 @@ export function AuthForm({ mode, action }: AuthFormProps) {
       }
     });
   });
-
-  const isRegister = mode === "register";
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,6 +105,29 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             <p className="text-muted-foreground text-xs">At least 8 characters.</p>
           ) : null}
         </div>
+
+        {isRegister ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="phone" className="font-medium text-sm">
+              Phone
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="01XXXXXXXXX"
+              {...register("phone")}
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            {errors.phone ? (
+              <p className="text-destructive-text text-sm">{errors.phone.message}</p>
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                Bangladesh mobile — used for delivery (e.g. 01XXXXXXXXX).
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {formError ? (
           <p role="alert" className="text-destructive-text text-sm">

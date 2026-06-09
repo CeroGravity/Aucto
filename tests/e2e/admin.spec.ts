@@ -9,6 +9,7 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByLabel("Phone").fill("01700000000");
   await Promise.all([
     page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
     page.getByRole("button", { name: "Create account" }).click(),
@@ -203,7 +204,9 @@ test.describe("admin order management", () => {
     // gating on a navigation/load event, which a just-foregrounded tab can stall
     // on) — the destination URL is the assertion that matters.
     await rowLink.click();
-    await expect.poll(() => new URL(page.url()).pathname).toMatch(/\/admin\/orders\/\d+$/);
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 20_000 })
+      .toMatch(/\/admin\/orders\/\d+$/);
   });
 
   test("MFS: mark paid → payment paid", async ({ page }) => {

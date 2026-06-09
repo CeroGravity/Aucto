@@ -21,41 +21,25 @@ type ProductSeed = {
 };
 
 export const categorySeed = [
-  { slug: "compression", name: "Compression" },
-  { slug: "gym-shorts", name: "Gym Shorts" },
-  { slug: "muay-thai-shorts", name: "Muay Thai Shorts" },
+  { slug: "compression-shirts", name: "Compression Shirts" },
   { slug: "mma-shorts", name: "MMA Shorts" },
+  { slug: "accessories", name: "Accessories" },
 ];
 
 const v = (entries: Array<[Size, number]>): VariantSeed[] =>
   entries.map(([size, stock]) => ({ size, stock }));
 
 export const productSeed: ProductSeed[] = [
-  // compression
-  {
-    slug: "compression-long-tights",
-    name: "Compression Long Tights",
-    description:
-      "Full-length compression tights with moisture-wicking, four-way stretch fabric. Built for training, recovery, and layering.",
-    priceMinor: 220000,
-    categorySlug: "compression",
-    featured: true,
-    variants: v([
-      ["S", 12],
-      ["M", 9],
-      ["L", 7],
-      ["XL", 4],
-    ]),
-    imageCount: 2,
-  },
+  // --- Compression Shirts ---
   {
     slug: "compression-top",
     name: "Compression Top",
     description:
       "Second-skin compression top that supports muscle stability and keeps you dry through high-output sessions.",
     priceMinor: 190000,
-    categorySlug: "compression",
-    featured: false,
+    categorySlug: "compression-shirts",
+    // A flagship — sorted first on the products page.
+    featured: true,
     variants: v([
       ["XS", 5],
       // The e2e suite places several compression-top "S" orders; per-test
@@ -70,121 +54,22 @@ export const productSeed: ProductSeed[] = [
     imageCount: 2,
   },
   {
-    slug: "compression-shorts",
-    name: "Compression Shorts",
+    slug: "compression-long-sleeve",
+    name: "Compression Long-Sleeve",
     description:
-      "Lightweight base-layer compression shorts with a wide, no-roll waistband for chafe-free training.",
-    priceMinor: 150000,
-    categorySlug: "compression",
+      "Long-sleeve compression shirt with four-way stretch and flat seams — base-layer warmth without the bulk.",
+    priceMinor: 230000,
+    categorySlug: "compression-shirts",
     featured: false,
-    variants: v([
-      ["S", 14],
-      ["M", 11],
-      ["L", 9],
-      ["XL", 6],
-      ["XXL", 3],
-    ]),
-    imageCount: 2,
-  },
-  // gym-shorts
-  {
-    slug: "training-shorts-5in",
-    name: 'Training Shorts 5"',
-    description:
-      "Short-cut training shorts with a liner and zip pocket. Range-of-motion gusset for squats and sprints.",
-    priceMinor: 140000,
-    categorySlug: "gym-shorts",
-    featured: false,
-    variants: v([
-      ["S", 8],
-      ["M", 0],
-      ["L", 5],
-      ["XL", 3],
-    ]),
-    imageCount: 2,
-  },
-  {
-    slug: "performance-shorts-7in",
-    name: 'Performance Shorts 7"',
-    description:
-      "Mid-length performance shorts in a breathable woven shell with hidden drawcord and back pocket.",
-    priceMinor: 170000,
-    categorySlug: "gym-shorts",
-    featured: true,
     variants: v([
       ["S", 10],
-      ["M", 12],
-      ["L", 8],
-      ["XL", 5],
-    ]),
-    imageCount: 2,
-  },
-  {
-    slug: "lightweight-gym-shorts",
-    name: "Lightweight Gym Shorts",
-    description:
-      "Ultra-light everyday gym shorts that pack down small and dry fast. Minimal, unisex cut.",
-    priceMinor: 120000,
-    categorySlug: "gym-shorts",
-    featured: false,
-    variants: v([
-      ["XS", 4],
-      ["S", 7],
-      ["M", 9],
-      ["L", 0],
-      ["XL", 4],
-    ]),
-    imageCount: 2,
-  },
-  // muay-thai-shorts
-  {
-    slug: "muay-thai-shorts-classic",
-    name: "Muay Thai Shorts — Classic",
-    description:
-      "Traditional wide-cut Muay Thai shorts in satin with a high side split for unrestricted kicks.",
-    priceMinor: 250000,
-    categorySlug: "muay-thai-shorts",
-    featured: false,
-    variants: v([
-      ["S", 9],
-      ["M", 7],
+      ["M", 8],
       ["L", 6],
       ["XL", 3],
     ]),
-    imageCount: 3,
-  },
-  {
-    slug: "muay-thai-shorts-pro",
-    name: "Muay Thai Shorts — Pro",
-    description:
-      "Pro-grade Muay Thai shorts with reinforced stitching and a wide elastic waistband for fight-night durability.",
-    priceMinor: 320000,
-    categorySlug: "muay-thai-shorts",
-    featured: true,
-    variants: v([
-      ["S", 6],
-      ["M", 8],
-      ["L", 5],
-      ["XL", 2],
-    ]),
-    imageCount: 3,
-  },
-  {
-    slug: "muay-thai-shorts-elite",
-    name: "Muay Thai Shorts — Elite",
-    description:
-      "Lightweight micro-satin Muay Thai shorts engineered for speed, with a curved hem for full leg extension.",
-    priceMinor: 380000,
-    categorySlug: "muay-thai-shorts",
-    featured: false,
-    variants: v([
-      ["M", 4],
-      ["L", 3],
-      ["XL", 0],
-    ]),
     imageCount: 2,
   },
-  // mma-shorts
+  // --- MMA Shorts ---
   {
     slug: "mma-fight-shorts",
     name: "MMA Fight Shorts",
@@ -192,6 +77,7 @@ export const productSeed: ProductSeed[] = [
       "Stretch-panel MMA fight shorts with a hook-and-loop closure and internal drawcord for a locked-in fit.",
     priceMinor: 280000,
     categorySlug: "mma-shorts",
+    // A flagship — sorted first on the products page.
     featured: true,
     variants: v([
       ["S", 7],
@@ -200,22 +86,6 @@ export const productSeed: ProductSeed[] = [
       ["XL", 4],
     ]),
     imageCount: 3,
-  },
-  {
-    slug: "mma-hybrid-shorts",
-    name: "MMA Hybrid Shorts",
-    description:
-      "Hybrid MMA shorts that move from cage to gym — abrasion-resistant shell with deep four-way stretch.",
-    priceMinor: 300000,
-    categorySlug: "mma-shorts",
-    featured: false,
-    variants: v([
-      ["S", 5],
-      ["M", 6],
-      ["L", 0],
-      ["XL", 3],
-    ]),
-    imageCount: 2,
   },
   {
     slug: "mma-grappling-shorts",
@@ -231,6 +101,51 @@ export const productSeed: ProductSeed[] = [
       ["L", 0],
       ["XL", 0],
     ]),
+    imageCount: 2,
+  },
+  // --- Accessories (one-size; a single "M" variant) ---
+  {
+    slug: "premium-baseball-cap",
+    name: "Premium Baseball Cap",
+    description:
+      "Structured six-panel cap in heavy brushed cotton with a curved brim and the Aucto mark — everyday, gym to street.",
+    priceMinor: 95000,
+    categorySlug: "accessories",
+    featured: false,
+    variants: v([["M", 30]]),
+    imageCount: 2,
+  },
+  {
+    slug: "gym-wrist-support",
+    name: "Gym Wrist Support",
+    description:
+      "Adjustable wrist wraps for pressing and Olympic lifts — firm support with a hook-and-loop cinch.",
+    priceMinor: 70000,
+    categorySlug: "accessories",
+    featured: false,
+    variants: v([["M", 40]]),
+    imageCount: 2,
+  },
+  {
+    slug: "boxing-hand-wraps",
+    name: "Boxing Hand Wraps",
+    description:
+      "Semi-elastic 4.5m cotton hand wraps with a thumb loop and hook-and-loop closure — protect the knuckles and wrist.",
+    priceMinor: 55000,
+    categorySlug: "accessories",
+    featured: false,
+    variants: v([["M", 50]]),
+    imageCount: 2,
+  },
+  {
+    slug: "pre-wrapped-hand-wrist-support",
+    name: "Pre-Wrapped Hand & Wrist Support",
+    description:
+      "Slip-on pre-wrapped hand and wrist support — the protection of wraps without the wrapping, ready in seconds.",
+    priceMinor: 65000,
+    categorySlug: "accessories",
+    featured: false,
+    variants: v([["M", 35]]),
     imageCount: 2,
   },
 ];

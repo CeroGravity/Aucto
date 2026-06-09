@@ -62,6 +62,7 @@ export async function createProduct(input: unknown): Promise<ProductActionResult
       priceMinor,
       categoryId: parsed.data.categoryId,
       status: parsed.data.published ? "published" : "draft",
+      featured: parsed.data.featured,
     })
     .returning({ id: products.id });
   if (!created) return { ok: false, error: "Could not create product." };
@@ -108,6 +109,7 @@ export async function updateProduct(rawId: unknown, input: unknown): Promise<Pro
       priceMinor,
       categoryId: parsed.data.categoryId,
       status,
+      featured: parsed.data.featured,
       updatedAt: new Date(),
     })
     .where(eq(products.id, id.data));

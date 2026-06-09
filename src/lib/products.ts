@@ -17,6 +17,7 @@ export const productFormSchema = z.object({
   // Taka string from the form; converted to poisha in the action.
   price: z.string().trim().min(1, "Price is required."),
   published: z.coerce.boolean().default(false),
+  featured: z.coerce.boolean().default(false),
 });
 
 export type ProductFormInput = z.infer<typeof productFormSchema>;

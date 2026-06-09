@@ -36,11 +36,16 @@ function run(cmd: string, args: string[], env: NodeJS.ProcessEnv): string {
 async function snapshot(url: string): Promise<string> {
   const sql = postgres(url, { max: 1 });
   try {
+    // Order by column NAME, not ordinal_position: a migration's ADD COLUMN
+    // appends, while a fresh push lays columns out in schema-source order, so the
+    // positions legitimately differ. Postgres treats column order as cosmetic
+    // (access is by name) — comparing name-sorted makes parity position-
+    // independent, asserting only the real schema (types, nullability, defaults).
     const columns = await sql`
       SELECT table_name, column_name, data_type, udt_name, is_nullable, column_default
       FROM information_schema.columns
       WHERE table_schema = 'public'
-      ORDER BY table_name, ordinal_position`;
+      ORDER BY table_name, column_name`;
     const constraints = await sql`
       SELECT tc.table_name, tc.constraint_type, kcu.column_name
       FROM information_schema.table_constraints tc

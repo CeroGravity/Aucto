@@ -9,6 +9,7 @@ async function register(page: Page, email: string): Promise<void> {
   await page.goto("/register");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByLabel("Phone").fill("01700000000");
   await Promise.all([
     page.waitForURL(/\/account$/, { waitUntil: "domcontentloaded" }),
     page.getByRole("button", { name: "Create account" }).click(),

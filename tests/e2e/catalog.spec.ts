@@ -23,20 +23,21 @@ test.describe("catalog", () => {
 
     // The filter control links to the shareable, URL-based filter.
     const filter = page.getByRole("navigation", { name: "Filter by category" });
-    await expect(
-      filter.getByRole("link", { name: "Muay Thai Shorts", exact: true }),
-    ).toHaveAttribute("href", "/products?category=muay-thai-shorts");
+    await expect(filter.getByRole("link", { name: "MMA Shorts", exact: true })).toHaveAttribute(
+      "href",
+      "/products?category=mma-shorts",
+    );
 
     // Visiting that URL narrows the grid (server-rendered, shareable).
-    await page.goto("/products?category=muay-thai-shorts");
+    await page.goto("/products?category=mma-shorts");
 
     await page.locator(productCards).first().waitFor();
     const filteredCount = await page.locator(productCards).count();
     expect(filteredCount).toBeGreaterThan(0);
     expect(filteredCount).toBeLessThan(allCount);
 
-    // A muay-thai product shows; a compression product does not.
-    await expect(page.locator('a[href^="/products/muay-thai"]').first()).toBeVisible();
+    // An MMA-shorts product shows; a compression product (other category) does not.
+    await expect(page.locator('a[href="/products/mma-fight-shorts"]')).toBeVisible();
     await expect(page.locator('a[href="/products/compression-top"]')).toHaveCount(0);
   });
 

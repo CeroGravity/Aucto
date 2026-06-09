@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -7,6 +8,8 @@ import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { SHIPPING_MINOR } from "@/lib/checkout";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { formatPriceMinor } from "@/lib/money";
 import { getCart } from "@/server/queries/cart";
@@ -43,6 +46,13 @@ export default async function CheckoutPage({
   }
 
   const session = await auth();
+  // Prefill shipping phone from the logged-in user's account (guests get none).
+  const account = session?.user?.id
+    ? await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+        columns: { phone: true },
+      })
+    : null;
   const totalMinor = cart.subtotalMinor + SHIPPING_MINOR;
   const statusMessage = STATUS_MESSAGES[(await searchParams).status ?? ""];
 
@@ -66,7 +76,10 @@ export default async function CheckoutPage({
           <h2 className="font-semibold text-lg">Shipping details</h2>
           <div className="mt-5">
             <CheckoutForm
-              defaultValues={{ fullName: session?.user?.name ?? "" }}
+              defaultValues={{
+                fullName: session?.user?.name ?? "",
+                phone: account?.phone ?? "",
+              }}
               amountLabel={formatPriceMinor(totalMinor)}
               bkashNumber={env.NEXT_PUBLIC_BKASH_NUMBER}
               nagadNumber={env.NEXT_PUBLIC_NAGAD_NUMBER}

@@ -5,9 +5,9 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-// "Continue with Google/Facebook" buttons. They always render (so the layout is
-// consistent); a real click works only when the provider is configured server-
-// side. signIn redirects to the provider, then back to /account.
+// "Continue with Google" button. It always renders (so the layout is
+// consistent); a real click works only when Google is configured server-side.
+// signIn redirects to Google, then back to /account.
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
@@ -31,49 +31,25 @@ function GoogleIcon() {
   );
 }
 
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
-      <path
-        fill="#1877F2"
-        d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.88v2.26h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07Z"
-      />
-    </svg>
-  );
-}
-
 export function OAuthButtons() {
-  const [pending, setPending] = useState<"google" | "facebook" | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function go(provider: "google" | "facebook") {
-    setPending(provider);
-    void signIn(provider, { callbackUrl: "/account" });
+  function go() {
+    setPending(true);
+    void signIn("google", { callbackUrl: "/account" });
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        disabled={pending !== null}
-        onClick={() => go("google")}
-        aria-label="Continue with Google"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        disabled={pending !== null}
-        onClick={() => go("facebook")}
-        aria-label="Continue with Facebook"
-      >
-        <FacebookIcon />
-        Continue with Facebook
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      disabled={pending}
+      onClick={go}
+      aria-label="Continue with Google"
+    >
+      <GoogleIcon />
+      Continue with Google
+    </Button>
   );
 }

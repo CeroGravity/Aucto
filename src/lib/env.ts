@@ -9,13 +9,11 @@ const envSchema = z
     DATABASE_URL_UNPOOLED: z.url().optional(),
     // Auth.js session/JWT secret.
     AUTH_SECRET: z.string().min(1),
-    // OAuth providers (optional). Auth.js v5 auto-detects these; the Node auth
-    // config registers Google/Facebook only when their pair is present, so
-    // dev/CI without creds still boots and the Credentials path is unaffected.
+    // Google OAuth (optional). The Node auth config registers Google only when
+    // its pair is present, so dev/CI without creds still boots and the
+    // Credentials path is unaffected.
     AUTH_GOOGLE_ID: z.string().optional(),
     AUTH_GOOGLE_SECRET: z.string().optional(),
-    AUTH_FACEBOOK_ID: z.string().optional(),
-    AUTH_FACEBOOK_SECRET: z.string().optional(),
     // Payment provider selection + SSLCommerz sandbox credentials (optional;
     // app runs on the fake adapter without them).
     PAYMENT_PROVIDER: z.enum(["fake", "sslcommerz"]).default("fake"),

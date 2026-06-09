@@ -12,10 +12,9 @@ export type FooterColumn = {
 };
 
 export const categoryNav: NavLink[] = [
-  { label: "Compression", href: "/products?category=compression" },
-  { label: "Gym Shorts", href: "/products?category=gym-shorts" },
-  { label: "Muay Thai", href: "/products?category=muay-thai-shorts" },
-  { label: "MMA Shorts", href: "/products?category=mma-shorts" },
+  { label: "Compression", href: "/products?category=compression-shirts" },
+  { label: "Shorts", href: "/products?category=mma-shorts" },
+  { label: "Accessories", href: "/products?category=accessories" },
 ];
 
 export const accountLink: NavLink = { label: "Account", href: "/account" };
