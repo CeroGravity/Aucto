@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { ChangePasswordForm } from "@/components/features/change-password-form";
 import { PhoneSettings } from "@/components/features/phone-settings";
+import { TwoFactorSection } from "@/components/features/two-factor-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -34,7 +35,13 @@ export default async function AccountPage() {
   const [user, orders] = await Promise.all([
     db.query.users.findFirst({
       where: eq(users.id, session.user.id),
-      columns: { name: true, email: true, phone: true },
+      columns: {
+        name: true,
+        email: true,
+        phone: true,
+        passwordHash: true,
+        totpEnabled: true,
+      },
     }),
     getOrdersForUser(session.user.id),
   ]);
@@ -117,13 +124,12 @@ export default async function AccountPage() {
         </div>
 
         <h3 className="mt-8 font-medium text-sm">Two-factor authentication</h3>
-        <p className="mt-2 text-muted-foreground text-sm">
-          Two-factor authentication isn’t available yet — controls will appear here in an upcoming
-          release.
-        </p>
-        <Button variant="outline" size="sm" disabled aria-disabled className="mt-3 w-fit">
-          Set up 2FA (coming soon)
-        </Button>
+        <div className="mt-3">
+          <TwoFactorSection
+            enabled={user?.totpEnabled ?? false}
+            canEnroll={Boolean(user?.passwordHash)}
+          />
+        </div>
       </section>
 
       <Separator className="my-10" />

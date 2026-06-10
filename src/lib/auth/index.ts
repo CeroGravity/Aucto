@@ -1,11 +1,11 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
-
+import { verifyTwoFactor } from "@/lib/2fa/verify";
 import { mergeGuestCartIntoUser } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
@@ -14,10 +14,27 @@ import { authConfig } from "./auth.config";
 const credentialsSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
+  // Optional 2FA code (TOTP or backup code). Only consulted when the account
+  // has 2FA enabled; absent on the first login step.
+  code: z.string().optional(),
 });
 
+// Distinct, non-account-leaking signals the login UI keys off `error.code`.
+// `TwoFactorRequired` tells the UI to reveal the code field; `TwoFactorInvalid`
+// /`TwoFactorLocked` report a bad/locked code WITHOUT confirming the password
+// was right to an unauthenticated caller beyond the 2FA step already reached.
+export class TwoFactorRequiredError extends CredentialsSignin {
+  code = "TwoFactorRequired";
+}
+export class TwoFactorInvalidError extends CredentialsSignin {
+  code = "TwoFactorInvalid";
+}
+export class TwoFactorLockedError extends CredentialsSignin {
+  code = "TwoFactorLocked";
+}
+
 const credentials = Credentials({
-  credentials: { email: {}, password: {} },
+  credentials: { email: {}, password: {}, code: {} },
   async authorize(raw) {
     const parsed = credentialsSchema.safeParse(raw);
     if (!parsed.success) return null;
@@ -28,6 +45,18 @@ const credentials = Credentials({
 
     const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
     if (!valid) return null;
+
+    // 2FA gate: password is correct, but an enabled account also needs a valid
+    // code before a session is issued. No code yet → signal the UI to ask.
+    if (user.totpEnabled) {
+      const code = parsed.data.code ?? "";
+      if (!code.trim()) throw new TwoFactorRequiredError();
+      const result = await verifyTwoFactor(user, code);
+      if (!result.ok) {
+        if (result.reason === "locked") throw new TwoFactorLockedError();
+        throw new TwoFactorInvalidError();
+      }
+    }
 
     return { id: user.id, email: user.email, name: user.name, role: user.role };
   },

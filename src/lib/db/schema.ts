@@ -171,7 +171,27 @@ export const users = pgTable("users", {
   // Google sign-ups have no phone from the provider (they set it at checkout /
   // in account settings). Prefills the shipping phone for logged-in checkout.
   phone: text("phone"),
+  // TOTP 2FA (email/password accounts only). The secret is stored ENCRYPTED at
+  // rest (AES-256-GCM, key derived from AUTH_SECRET via HKDF) — never plaintext.
+  // 2FA is "enabled" only after the user confirms a valid code. The lock fields
+  // throttle the verify step (brute-force defense on the 6-digit code).
+  totpSecretEnc: text("totp_secret_enc"),
+  totpEnabled: boolean("totp_enabled").notNull().default(false),
+  twoFactorFailedCount: integer("two_factor_failed_count").notNull().default(0),
+  twoFactorLockedUntil: timestamp("two_factor_locked_until", { withTimezone: true }),
   role: roleEnum("role").notNull().default("user"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// One-time 2FA backup codes. Stored bcrypt-HASHED (never plaintext); each is
+// consumable exactly once (usedAt set on use). Issued when 2FA is enabled.
+export const twoFactorBackupCodes = pgTable("two_factor_backup_codes", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

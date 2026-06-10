@@ -30,14 +30,18 @@ type FormValues = { email: string; password: string; phone?: string };
 
 type AuthFormProps = {
   mode: "login" | "register";
-  // phone is "" for login; the server validates it on register.
-  action: (email: string, password: string, phone: string) => Promise<AuthResult>;
+  // phone is "" for login; the server validates it on register. `code` carries
+  // the 2FA code on the resubmit after the password step (login only).
+  action: (email: string, password: string, phone: string, code?: string) => Promise<AuthResult>;
 };
 
 export function AuthForm({ mode, action }: AuthFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
+  // Revealed once the password is accepted but the account has 2FA enabled.
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [code, setCode] = useState("");
 
   const isRegister = mode === "register";
 
@@ -50,10 +54,20 @@ export function AuthForm({ mode, action }: AuthFormProps) {
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
     startTransition(async () => {
-      const result = await action(values.email, values.password, values.phone ?? "");
+      const result = await action(
+        values.email,
+        values.password,
+        values.phone ?? "",
+        twoFactor ? code : undefined,
+      );
       if (result.ok) {
         router.push("/account");
         router.refresh();
+        return;
+      }
+      if ("twoFactorRequired" in result) {
+        setTwoFactor(true);
+        setFormError(result.error ?? null);
       } else {
         setFormError(result.error);
       }
@@ -129,6 +143,28 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           </div>
         ) : null}
 
+        {twoFactor ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="code" className="font-medium text-sm">
+              Authentication code
+            </label>
+            <input
+              id="code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <p className="text-muted-foreground text-xs">
+              Enter the 6-digit code from your authenticator app, or a backup code.
+            </p>
+          </div>
+        ) : null}
+
         {formError ? (
           <p role="alert" className="text-destructive-text text-sm">
             {formError}
@@ -136,7 +172,13 @@ export function AuthForm({ mode, action }: AuthFormProps) {
         ) : null}
 
         <Button type="submit" size="lg" disabled={pending}>
-          {pending ? "Please wait…" : isRegister ? "Create account" : "Log in"}
+          {pending
+            ? "Please wait…"
+            : isRegister
+              ? "Create account"
+              : twoFactor
+                ? "Verify code"
+                : "Log in"}
         </Button>
       </form>
 

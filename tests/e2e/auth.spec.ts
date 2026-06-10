@@ -129,7 +129,7 @@ test.describe("auth", () => {
       await page.getByLabel(label).fill(value);
     }
     await Promise.all([
-      page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/, { waitUntil: "domcontentloaded" }),
+      page.waitForURL(/\/order\/[A-Za-z0-9_-]+$/, { waitUntil: "commit", timeout: 45_000 }),
       page.getByRole("button", { name: "Place order" }).click(),
     ]);
 
@@ -145,17 +145,15 @@ test.describe("auth", () => {
     await expect(page.getByText(/Order #\d+/).first()).toBeVisible();
   });
 
-  test("account security section exposes change-password and a 2FA placeholder", async ({
-    page,
-  }) => {
+  test("account security section exposes change-password and 2FA setup", async ({ page }) => {
     await register(page, uniqueEmail());
     await page.goto("/account");
 
     await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
     await expect(page.getByLabel("Current password")).toBeVisible();
     await expect(page.getByLabel("New password")).toBeVisible();
-    // 2FA controls are a clearly-marked placeholder (disabled).
-    await expect(page.getByRole("button", { name: /Set up 2FA/ })).toBeDisabled();
+    // 2FA is a live, enabled setup entry point (covered in depth by two-factor.spec).
+    await expect(page.getByRole("button", { name: "Set up two-factor" })).toBeEnabled();
   });
 
   test("/account redirects to /login when logged out", async ({ page }) => {

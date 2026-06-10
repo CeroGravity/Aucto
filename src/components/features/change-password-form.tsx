@@ -29,7 +29,7 @@ export function ChangePasswordForm() {
         setCurrent("");
         setNext("");
       } else {
-        setError(result.error);
+        setError(result.error ?? "Something went wrong.");
       }
     });
   }

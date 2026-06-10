@@ -25,7 +25,7 @@ export function PhoneSettings({ phone }: { phone: string | null }) {
         setSaved(true);
         router.refresh();
       } else {
-        setError(result.error);
+        setError(result.error ?? "Something went wrong.");
       }
     });
   }

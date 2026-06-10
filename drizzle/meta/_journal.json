@@ -15,6 +15,13 @@
       "when": 1780978196583,
       "tag": "0001_yielding_bill_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781063834270,
+      "tag": "0002_fast_lizard",
+      "breakpoints": true
     }
   ]
 }

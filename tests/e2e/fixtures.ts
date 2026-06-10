@@ -30,4 +30,6 @@ test.beforeEach(async () => {
   await seedDatabase(db);
 });
 
-export { expect, test };
+// Exposed for specs that must assert on persisted rows (e.g. 2FA: read the
+// stored secret to generate a valid TOTP, and assert it's ciphertext at rest).
+export { db, expect, test };

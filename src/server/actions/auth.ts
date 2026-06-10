@@ -12,7 +12,12 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { bdPhoneSchema } from "@/lib/phone";
 
-export type AuthResult = { ok: true } | { ok: false; error: string };
+export type AuthResult =
+  | { ok: true }
+  | { ok: false; error: string }
+  // Password was correct but the account has 2FA enabled — the UI reveals a code
+  // field and resubmits with the code. `locked` flags the brute-force lockout.
+  | { ok: false; twoFactorRequired: true; locked?: boolean; error?: string };
 
 const registerSchema = z.object({
   email: z.email("Enter a valid email."),
@@ -68,10 +73,12 @@ export async function registerUser(
 }
 
 // `_phone` is accepted (ignored) so login shares the AuthForm action signature.
+// `code` carries the 2FA code on the resubmit after the password step.
 export async function loginUser(
   email: string,
   password: string,
   _phone?: string,
+  code?: string,
 ): Promise<AuthResult> {
   const parsed = loginSchema.safeParse({ email, password });
   if (!parsed.success) {
@@ -83,10 +90,26 @@ export async function loginUser(
     await signIn("credentials", {
       email: normalizedEmail,
       password: parsed.data.password,
+      code: code ?? "",
       redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
+      // The authorize() 2FA branch throws CredentialsSignin subclasses whose
+      // `.code` propagates onto the AuthError — map them to UI signals.
+      const authCode = (error as AuthError & { code?: string }).code;
+      if (authCode === "TwoFactorRequired") return { ok: false, twoFactorRequired: true };
+      if (authCode === "TwoFactorLocked") {
+        return {
+          ok: false,
+          twoFactorRequired: true,
+          locked: true,
+          error: "Too many attempts. Try again in 15 minutes.",
+        };
+      }
+      if (authCode === "TwoFactorInvalid") {
+        return { ok: false, twoFactorRequired: true, error: "Invalid code. Try again." };
+      }
       return { ok: false, error: "Invalid email or password." };
     }
     throw error;
