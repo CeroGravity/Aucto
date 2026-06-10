@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useCart } from "@/components/features/cart-context";
 import { CartItemRow } from "@/components/features/cart-item-row";
@@ -8,10 +9,24 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPriceMinor } from "@/lib/money";
 
+// Matches the Sheet's slide-out duration (data-[state=closed]:duration-300).
+const DRAWER_EXIT_MS = 300;
+
 // Shared cart body for the drawer and the /cart page. Reads the optimistic cart
 // from context so both update in the same tick as a mutation.
 export function CartPanel() {
-  const { cart, setOpen } = useCart();
+  const { cart, open, setOpen } = useCart();
+  const router = useRouter();
+
+  // Checkout: when the drawer is open, play its slide-out exit first, THEN
+  // navigate — so the user sees a smooth close into /checkout, not a snap. On
+  // the /cart page the drawer is closed, so we navigate immediately.
+  function goToCheckout(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!open) return; // /cart page — let the Link navigate normally.
+    e.preventDefault();
+    setOpen(false);
+    window.setTimeout(() => router.push("/checkout"), DRAWER_EXIT_MS);
+  }
 
   if (cart.lines.length === 0) {
     return (
@@ -42,10 +57,7 @@ export function CartPanel() {
         </p>
         <Separator className="my-4" />
         <Button asChild size="lg" className="w-full">
-          {/* Close the drawer as we navigate, so the user lands on /checkout
-              with no drawer lingering over it. Harmless on the /cart page (the
-              drawer isn't open there). */}
-          <Link href="/checkout" onClick={() => setOpen(false)}>
+          <Link href="/checkout" onClick={goToCheckout}>
             Checkout
           </Link>
         </Button>

@@ -105,6 +105,37 @@ export async function logoutUser(): Promise<void> {
   await signOut({ redirectTo: "/" });
 }
 
+// Change the signed-in user's password. Requires the current password (so a
+// stolen session can't silently rotate it). OAuth-only accounts (no
+// passwordHash) sign in with Google and have no password to change.
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthResult> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return { ok: false, error: "Not signed in." };
+
+  if (newPassword.length < 8) {
+    return { ok: false, error: "New password must be at least 8 characters." };
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { passwordHash: true },
+  });
+  if (!user?.passwordHash) {
+    return { ok: false, error: "This account signs in with Google; no password to change." };
+  }
+
+  const matches = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!matches) return { ok: false, error: "Current password is incorrect." };
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  return { ok: true };
+}
+
 // Set/update the signed-in user's phone (account settings). BD-validated +
 // normalized. Google users use this to add the phone Google can't provide.
 export async function updatePhone(phone: string): Promise<AuthResult> {

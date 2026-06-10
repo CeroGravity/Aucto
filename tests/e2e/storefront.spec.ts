@@ -49,14 +49,14 @@ test.describe("storefront — cart drawer closes on checkout", () => {
     const drawer = page.locator('[role="dialog"][data-state="open"]').first();
     await expect(drawer).toBeVisible();
 
-    // Click Checkout inside the drawer → it closes + we navigate to /checkout.
-    await Promise.all([
-      page.waitForURL(/\/checkout$/, { waitUntil: "domcontentloaded" }),
-      drawer.getByRole("link", { name: "Checkout" }).click(),
-    ]);
-
-    // The drawer is gone, and we're on the checkout page (shipping form visible).
+    // Click Checkout → the drawer flips out of the open state and plays its
+    // slide-out exit BEFORE navigating (a graceful close, not a snap). We assert
+    // the open-state drawer is dismissed first, then the URL changes.
+    await drawer.getByRole("link", { name: "Checkout" }).click();
     await expect(page.locator('[role="dialog"][data-state="open"]')).toHaveCount(0);
+
+    // Then navigation lands on /checkout (the drawer's exit completed first).
+    await page.waitForURL(/\/checkout$/, { waitUntil: "domcontentloaded" });
     await expect(page.getByLabel("Full name")).toBeVisible();
   });
 });
