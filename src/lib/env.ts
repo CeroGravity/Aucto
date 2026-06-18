@@ -25,6 +25,12 @@ const envSchema = z
     // Storage for uploaded payment screenshots.
     STORAGE_PROVIDER: z.enum(["local", "blob"]).default("local"),
     LOCAL_UPLOAD_DIR: z.string().default("./uploads"),
+    // Vercel Blob store id (e.g. store_xxx). On Vercel this pairs with the
+    // auto-rotated VERCEL_OIDC_TOKEN so server-side put()/head() authenticate via
+    // OIDC — no static secret. Required when STORAGE_PROVIDER=blob.
+    BLOB_STORE_ID: z.string().optional(),
+    // Optional fallback static token for non-Vercel/CLI contexts (where there is
+    // no OIDC token). When unset on Vercel, the SDK uses OIDC + BLOB_STORE_ID.
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
     // Public base URL of the Blob store (e.g. https://<id>.public.blob.vercel-storage.com).
     // When set (prod + STORAGE_PROVIDER=blob), public product images are served
@@ -48,12 +54,23 @@ const envSchema = z
   .superRefine((env, ctx) => {
     // Provider-gated production requirements: a provider is only valid if its
     // credentials are present. This fails the build/boot with a clear message.
-    if (env.STORAGE_PROVIDER === "blob" && !env.BLOB_READ_WRITE_TOKEN) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["BLOB_READ_WRITE_TOKEN"],
-        message: "BLOB_READ_WRITE_TOKEN is required when STORAGE_PROVIDER=blob.",
-      });
+    if (env.STORAGE_PROVIDER === "blob") {
+      // OIDC auth: the store id identifies the Blob store; VERCEL_OIDC_TOKEN
+      // (auto-injected on Vercel) authenticates. A static token is optional.
+      if (!env.BLOB_STORE_ID) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["BLOB_STORE_ID"],
+          message: "BLOB_STORE_ID is required when STORAGE_PROVIDER=blob.",
+        });
+      }
+      if (!env.NEXT_PUBLIC_BLOB_BASE_URL) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["NEXT_PUBLIC_BLOB_BASE_URL"],
+          message: "NEXT_PUBLIC_BLOB_BASE_URL is required when STORAGE_PROVIDER=blob.",
+        });
+      }
     }
     if (env.NOTIFY_PROVIDER === "real") {
       if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {

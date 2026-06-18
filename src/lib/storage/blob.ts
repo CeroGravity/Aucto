@@ -27,12 +27,13 @@ const TYPE_BY_EXT: Record<string, string> = {
 // token) and streams them, so privacy is preserved exactly as with the local
 // adapter. The pub_/prv_ namespace + the route gates are the access control.
 export class BlobStorageProvider implements StorageProvider {
-  private token(): string {
-    const token = env.BLOB_READ_WRITE_TOKEN;
-    if (!token) {
-      throw new Error("BLOB_READ_WRITE_TOKEN is required when STORAGE_PROVIDER=blob.");
-    }
-    return token;
+  // Auth options for the SDK. On Vercel, omitting `token` lets the SDK
+  // authenticate via OIDC (VERCEL_OIDC_TOKEN) + the explicit `storeId`. A static
+  // BLOB_READ_WRITE_TOKEN, when present, is used as a fallback (non-Vercel/CLI).
+  private auth(): { token: string } | { storeId: string } {
+    if (env.BLOB_READ_WRITE_TOKEN) return { token: env.BLOB_READ_WRITE_TOKEN };
+    if (env.BLOB_STORE_ID) return { storeId: env.BLOB_STORE_ID };
+    throw new Error("BLOB_STORE_ID (OIDC) or BLOB_READ_WRITE_TOKEN is required for blob storage.");
   }
 
   async put(file: StoredFile, visibility: Visibility): Promise<string> {
@@ -43,7 +44,7 @@ export class BlobStorageProvider implements StorageProvider {
       access: "public",
       addRandomSuffix: false, // pathname === key, so get() can resolve it
       contentType: file.contentType,
-      token: this.token(),
+      ...this.auth(),
     });
     return key;
   }
@@ -55,7 +56,7 @@ export class BlobStorageProvider implements StorageProvider {
     try {
       // Resolve the key → blob URL server-side (with the token); the URL is
       // never returned to callers — only the bytes are.
-      const meta = await head(key, { token: this.token() });
+      const meta = await head(key, this.auth());
       const res = await fetch(meta.url);
       if (!res.ok) return null;
       const bytes = Buffer.from(await res.arrayBuffer());

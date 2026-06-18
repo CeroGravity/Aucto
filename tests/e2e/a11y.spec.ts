@@ -110,6 +110,8 @@ const STOREFRONT: Array<{ name: string; path: string }> = [
   { name: "checkout", path: "/checkout" },
   { name: "login", path: "/login" },
   { name: "register", path: "/register" },
+  { name: "privacy", path: "/privacy" },
+  { name: "terms", path: "/terms" },
 ];
 
 test.describe("a11y — storefront (light)", () => {
