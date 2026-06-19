@@ -94,12 +94,14 @@ export default function Hero3D() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-    camera.position.set(0, 0, 12);
+    const BASE_CAM_Z = 12; // framing at landscape (aspect ≥ 1)
+    camera.position.set(0, 0, BASE_CAM_Z);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setClearColor(0x000000, 0); // transparent → static hero bg shows through
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    // Cap DPR so high-DPI phones don't render at 3× and tank the frame rate.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
 
     const group = new THREE.Group();
@@ -138,7 +140,15 @@ export default function Hero3D() {
       const h = mount.clientHeight;
       if (w === 0 || h === 0) return;
       renderer.setSize(w, h, false);
-      camera.aspect = w / h;
+      const aspect = w / h;
+      camera.aspect = aspect;
+      // Aspect-adaptive framing: a perspective camera's HORIZONTAL view narrows
+      // as aspect drops below 1 (portrait/mobile), which would leave the wide
+      // ridge field sparse and clipped. Pull the camera back inversely with
+      // aspect so the full FIELD_WIDTH keeps spanning the viewport on narrow /
+      // portrait screens; landscape keeps the base framing (clamped so it never
+      // zooms IN past the design distance).
+      camera.position.z = BASE_CAM_Z * Math.min(Math.max(1 / aspect, 1), 2.2);
       camera.updateProjectionMatrix();
     };
     resize();
